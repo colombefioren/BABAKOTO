@@ -278,3 +278,20 @@ Format: context, options considered, decision, consequences. Newest last.
   plus a full STT call, which may make the 1.5 s p50 target hard; the benchmark will say.
   Nothing has run against real models, a LiveKit server or a browser yet, and the 300 ms
   barge-in claim is unmeasured.
+
+## ADR-0021: Latency benchmark measures stages over HTTP
+
+- **Context:** The brief wants end-of-user-speech to first agent audio over 50 scripted turns,
+  p50 and p95. A true measurement needs a browser, WebRTC and a live room. The benchmark must
+  also run on a GPU notebook where ports and Docker are uncertain (ADR-0016).
+- **Options:** drive a headless browser through LiveKit; time each stage over HTTP and sum.
+- **Decision:** Time STT, the LLM's first full sentence and TTS first-audio over HTTP, and add
+  the configured VAD silence and endpointing delay. The report states its scope and names the
+  GPU. LiveKit's `e2e_latency` from real calls (published by the agent, shown in the
+  playground) stays the authoritative in-call number. The first 3 turns are warmup.
+  Utterances are 10 distinct Malagasy sentences cycled to 50; latency does not depend on text
+  variety as much as on length, and the sentences are short on purpose (they are registered for
+  native review).
+- **Consequences:** The benchmark under-reports real latency by transport delay and
+  over-/under-reports VAD behavior. Any README claim must cite both numbers. The input audio is
+  synthesized by our own TTS, which is cleaner than a human voice, so STT time is optimistic.
