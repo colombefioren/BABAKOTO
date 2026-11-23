@@ -52,6 +52,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S105", "S106"]
+"eval/notebooks/**" = ["E501", "S101", "S603", "S607"]  # notebooks run subprocess and print tables
 "packages/malagasy-text/**" = ["RUF001"]  # curly quotes and NBSP are test inputs
 
 [tool.mypy]
