@@ -1,0 +1,11 @@
+node_modules
+.next
+pnpm-lock.yaml
+uv.lock
+.venv
+site
+CODE_OF_CONDUCT.md
+LICENSE
+coverage
+playwright-report
+test-results

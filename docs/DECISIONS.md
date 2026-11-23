@@ -26,3 +26,59 @@ Format: context, options considered, decision, consequences. Newest last.
   `ALLOW_NON_COMMERCIAL_ASSETS`.
 - **Consequences:** No production-default TTS exists until clarified or `babakoto-tts`
   (Milestone 3) ships. Record the outcome here when known.
+
+## ADR-0004: Python monorepo as a uv workspace
+
+- **Context:** Eight Python components (agent, api, stt, tts, malagasy-text, training/asr,
+  training/tts, eval) must share one lockfile, linters and test run.
+- **Options:** one package per directory with separate venvs; one root package; uv workspace.
+- **Decision:** uv workspace with one member per component, a single `uv.lock`, Python 3.12
+  pinned in `.python-version` (`requires-python >=3.11`), hatchling build backend, and root
+  config for ruff, `mypy --strict` and pytest coverage.
+- **Consequences:** Heavy ML dependencies (torch, transformers) will be added per member in
+  Milestone 1+, so CI and Docker images must install with `--package` to avoid pulling them
+  all. Skeleton members hold only a version constant and an import test until implemented.
+
+## ADR-0005: Next.js deferred, TypeScript tooling first
+
+- **Context:** Milestone 0 needs a green CI on a skeleton; the playground that justifies
+  Next.js is a Milestone 1 deliverable.
+- **Decision:** `web/` ships strict `tsconfig`, ESLint, Prettier, Vitest and Playwright config
+  now. Next.js, React and the LiveKit client are added in Milestone 1.
+- **Consequences:** Playwright has no tests yet (`tests/e2e/` is empty); the e2e CI job is
+  added with the first page.
+
+## ADR-0006: pre-commit local hooks reuse lockfile versions
+
+- **Context:** Remote pre-commit mirrors for mypy, prettier and eslint pin their own versions,
+  which drift from `uv.lock` and `pnpm-lock.yaml`.
+- **Decision:** ruff, mypy, prettier and eslint run as `language: system` hooks through
+  `uv run` / `pnpm exec`. Only `pre-commit-hooks` and `gitleaks` are remote (pinned by tag).
+- **Consequences:** Hooks need `just dev` first. CI runs the same tools through `just check`,
+  so local and CI results match.
+
+## ADR-0007: No French or Malagasy README summaries
+
+- **Context:** The brief asked for short French and Malagasy summaries in the README. The
+  owner asked to remove them.
+- **Decision:** README is English only. Documentation is English first; French docs are still
+  planned for the docs site in Milestone 4.
+- **Consequences:** Deviation from the brief is intentional. The Malagasy-string review
+  register (`docs/NEEDS_NATIVE_REVIEW.md`) stays for product strings and is currently empty.
+
+## ADR-0008: API skeleton is the first Docker image, base pinned by digest
+
+- **Context:** CI must build Docker images on every PR, but no service exists yet.
+- **Decision:** Ship a minimal API (`/healthz`, `/readyz`, typed settings) with a multi-stage,
+  non-root Dockerfile. The base image `python:3.12-slim` is pinned by sha256 digest, and uv by
+  version.
+- **Consequences:** Dependabot (Docker ecosystem) must keep the digest current. Other
+  services copy this Dockerfile pattern in Milestone 1.
+
+## ADR-0009: pnpm build scripts allowlist
+
+- **Context:** pnpm 12 refuses to run dependency install scripts unless approved.
+- **Decision:** Allow only `esbuild` (needed by Vitest) via `allowBuilds` in
+  `pnpm-workspace.yaml`.
+- **Consequences:** New dependencies with install scripts fail the install until reviewed and
+  added explicitly, which limits supply-chain exposure.

@@ -33,16 +33,16 @@ Providers are chosen by config, not code:
 
 ## Repository layout
 
-| Path | Purpose |
-| ---- | ------- |
-| `agent/` | LiveKit Agents worker |
-| `services/stt`, `services/tts` | Model-serving FastAPI services |
-| `api/` | Backend: agents, knowledge base, tools, conversations |
-| `web/` | Dashboard, playground, embeddable widget |
-| `training/` | ASR and TTS data pipelines and fine-tuning |
-| `eval/` | WER and latency benchmarks |
-| `packages/malagasy-text/` | Malagasy text normalization for TTS |
-| `infra/` | Docker Compose, Dockerfiles, deploy docs |
+| Path                           | Purpose                                               |
+| ------------------------------ | ----------------------------------------------------- |
+| `agent/`                       | LiveKit Agents worker                                 |
+| `services/stt`, `services/tts` | Model-serving FastAPI services                        |
+| `api/`                         | Backend: agents, knowledge base, tools, conversations |
+| `web/`                         | Dashboard, playground, embeddable widget              |
+| `training/`                    | ASR and TTS data pipelines and fine-tuning            |
+| `eval/`                        | WER and latency benchmarks                            |
+| `packages/malagasy-text/`      | Malagasy text normalization for TTS                   |
+| `infra/`                       | Docker Compose, Dockerfiles, deploy docs              |
 
 ## Quickstart
 
@@ -68,21 +68,3 @@ from stored transcripts by default.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
-
----
-
-## Résumé en français
-
-Babakoto est une plateforme open source et auto-hébergeable d'agents vocaux en temps réel qui
-comprennent et parlent le malgache. L'utilisateur parle (navigateur, téléphone ou widget),
-l'agent transcrit, réfléchit (LLM, outils, base de connaissances) et répond à voix haute, avec
-gestion des tours de parole et des interruptions. Le projet est en pré-alpha (jalon 0).
-
-## Fehezanteny amin'ny teny Malagasy
-
-> NEEDS_REVIEW: tsy mbola nohamarinin'ny mpandahateny teratany.
-
-Babakoto dia sehatra open source ahafahana manao mpanampy an-peo mandeha amin'ny fotoana tena
-izy, izay mahatakatra sy miteny Malagasy. Miresaka ilay mpampiasa (amin'ny navigateur,
-telefaona na widget), mihaino sy mamaly feo ilay mpanampy. Mbola ao amin'ny dingana voalohany
-(pre-alpha) ny tetikasa.
