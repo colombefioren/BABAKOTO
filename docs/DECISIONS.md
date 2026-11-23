@@ -105,3 +105,17 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences:** Pinning to tags, not commit SHAs, trades some supply-chain safety for
   readability; revisit before v0.1.0 in Milestone 4. Playwright e2e is not in CI until the
   first page exists (see ADR-0005).
+
+## ADR-0012: Branch protection allows owner direct fast-forward
+
+- **Context:** The brief requires PRs and passing CI on `main`. The owner's workflow also
+  fast-forwards single-commit branches straight to `main`.
+- **Options:** enforce rules for admins too (every change needs a PR); protect for everyone
+  except admins.
+- **Decision:** `main` requires the six CI checks, a pull request, linear history and resolved
+  conversations, with zero required approvals (a solo maintainer cannot approve their own PR).
+  Admin enforcement is off, so the owner can still fast-forward `main`. Force pushes and branch
+  deletion are blocked. Secret scanning, push protection and Dependabot alerts are on.
+- **Consequences:** Contributors cannot bypass CI. The owner can, so the one-commit shortcut
+  must only be used after the same checks pass locally. Turn on admin enforcement and require
+  one approval once a second maintainer joins.
