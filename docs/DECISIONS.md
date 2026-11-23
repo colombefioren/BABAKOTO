@@ -295,3 +295,45 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences:** The benchmark under-reports real latency by transport delay and
   over-/under-reports VAD behavior. Any README claim must cite both numbers. The input audio is
   synthesized by our own TTS, which is cleaner than a human voice, so STT time is optimistic.
+
+## ADR-0022: Web playground design
+
+- **Context:** Milestone 1 needs one playground page with a mic button, live transcript for both
+  sides and per-turn latency, keyboard accessible, with captions always on. ADR-0005 deferred
+  Next.js to this point.
+- **Decision:**
+  - Next.js 16 (App Router, `output: standalone`), React 19, `livekit-client` directly, and
+    `livekit-server-sdk` in one route handler (`POST /api/token`) that mints a 10-minute token
+    for a random, unguessable room per visitor. No login yet; the agent worker auto-joins
+    every new room. Open token minting is acceptable for a local playground but must gain auth
+    before any public deployment (Milestone 3 dashboard).
+  - Captions use LiveKit's `lk.transcription` text streams, verified in the installed
+    `livekit-client` 2.25. The user is recognized by the `lk.transcribed_track_id` attribute.
+    Pure logic (`transcript.ts`, `latency.ts`, `token.ts`) is unit-tested; the component is thin.
+  - Latency is the agent's own `e2e_latency`, received on the `babakoto.latency` data topic,
+    with p50 and p95 over the session, so what the page shows matches what the benchmark's
+    scope note says is authoritative.
+  - The UI is English. Unreviewed Malagasy UI strings would break the rule that every
+    Malagasy string waits for a native speaker; a Malagasy UI comes after review.
+  - The page is not tested against a live LiveKit server here. Playwright covers rendering and
+    the clear error when LiveKit is not configured; a conversation e2e needs the compose stack.
+  - CI gets an `e2e` job (build, install Chromium, run Playwright), as ADR-0005 planned.
+    `PLAYWRIGHT_CHROME_PATH` lets machines where the bundled browser cannot run use system Chrome.
+- **Consequences:** The `e2e` check should be added to branch protection once it has passed on
+  main. ESLint now includes the React hooks rules.
+
+## ADR-0023: Token endpoint abuse guards
+
+- **Context:** `POST /api/token` is open (ADR-0022), so anyone who can reach it can start a
+  billable agent session. An automated review flagged the missing limits.
+- **Decision:** Reject cross-site browser requests (`Sec-Fetch-Site`, `Origin`), rate limit by
+  client address (10 per minute, in memory), and mint least-privilege tokens: microphone only,
+  no data publishing, 10-minute lifetime, random room.
+- **Follow-up:** A second review found `X-Forwarded-For` spoofable and the key table
+  unbounded. `X-Forwarded-For` is now ignored unless `WEB_TRUSTED_PROXY_HOPS` says how many
+  proxies you run (the address is read from the right). Without it all visitors share one
+  bucket: safe but coarse. The table is capped at 10,000 keys and refuses new keys when full.
+- **Consequences:** The limiter is per instance, so it stops accidents and casual abuse, not a
+  determined attacker. Public deployment
+  still needs an edge or WAF limit, authentication and a cap on concurrent rooms; these come
+  with the Milestone 3 dashboard and are tracked there.
