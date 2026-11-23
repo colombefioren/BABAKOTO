@@ -1,0 +1,9 @@
+Babakoto
+Copyright 2026 The Babakoto contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Babakoto does not bundle or redistribute any third-party model weights, datasets or
+audio. Third-party models and datasets that Babakoto can download and use at runtime or
+during training are listed, with their licenses, in THIRD_PARTY_LICENSES.md. Their licenses
+are separate from, and may be more restrictive than, the license of this code.
