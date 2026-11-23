@@ -13,7 +13,7 @@ from babakoto_stt.testing import silence, tone, wav_bytes
 
 
 def make_client(**overrides: object) -> TestClient:
-    cfg = SttSettings(_env_file=None, stt_engine="fake", **overrides)  # type: ignore[arg-type]
+    cfg = SttSettings(_env_file=None, stt_engine="fake", allow_unauthenticated=True, **overrides)  # type: ignore[arg-type]
     return TestClient(create_app(cfg, FakeEngine("salama")))
 
 
@@ -141,5 +141,20 @@ def test_stream_client_disconnect_is_handled() -> None:
 
 def test_app_from_env_uses_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("STT_ENGINE", "fake")
+    monkeypatch.setenv("ALLOW_UNAUTHENTICATED", "true")
     with TestClient(create_app_from_env()) as client:
         assert client.get("/readyz").status_code == 200
+
+
+def test_token_protects_every_endpoint_but_probes() -> None:
+    token = "s" * 24
+    cfg = SttSettings(_env_file=None, stt_engine="fake", service_token=token)
+    with TestClient(create_app(cfg, FakeEngine())) as client:
+        assert client.get("/healthz").status_code == 200
+        wav = {"file": ("a.wav", wav_bytes(tone(0.2)))}
+        assert client.post("/transcribe", files=wav).status_code == 401
+        auth = {"Authorization": f"Bearer {token}"}
+        assert client.post("/transcribe", files=wav, headers=auth).status_code == 200
+        with pytest.raises(WebSocketDisconnect) as info, client.websocket_connect("/stream"):
+            pass
+        assert info.value.code == 1008

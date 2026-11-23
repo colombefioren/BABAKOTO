@@ -23,7 +23,9 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Context:** The official card says Apache-2.0 but at least one copy says weights are
   CC-BY-NC.
 - **Decision:** Treat as NC until the authors confirm in writing. It stays behind
-  `ALLOW_NON_COMMERCIAL_ASSETS`.
+  `ALLOW_NON_COMMERCIAL_ASSETS`. Update 2026-11-23: the model card does state that the
+  weights are CC-BY-NC (see ADR-0017), so this is now confirmed from the card, not just
+  suspected.
 - **Consequences:** No production-default TTS exists until clarified or `babakoto-tts`
   (Milestone 3) ships. Record the outcome here when known.
 
@@ -186,3 +188,64 @@ Format: context, options considered, decision, consequences. Newest last.
   conversation, interruption) may need a different host; the latency benchmark can run on
   Molab. Re-check the unknowns (shell, ports, secrets) before relying on it. Latency numbers
   must name the GPU used.
+
+## ADR-0017: TTS service design and the non-commercial gate
+
+- **Context:** The default TTS (OmniVoice) and the dev TTS (MMS) both have non-commercial
+  weights. Read on 2026-11-23: the OmniVoice model card says "Our code is released under the
+  Apache 2.0 License. The pre-trained model is licensed under the CC-BY-NC due to constraints
+  from its training data"; the GitHub repo and its LICENSE file are Apache-2.0 and say
+  nothing about the weights. This resolves ADR-0003 toward non-commercial. The upstream docs
+  show no streaming API and no `language` argument on `generate()`; Malagasy variants exist
+  as language ids (Plateau Malagasy is `plt`) but only in the batch CLI.
+- **Decision:**
+  - `TtsSettings` refuses to start for `omnivoice` or `mms` unless
+    `ALLOW_NON_COMMERCIAL_ASSETS=true`, and the engine logs a warning at build time. The default
+    engine is `omnivoice`, so a fresh install fails loudly instead of silently using NC weights.
+  - OmniVoice is loaded through `huggingface_hub.snapshot_download(revision=...)` then
+    `OmniVoice.from_pretrained(local_path)`, so the revision is pinned even though the upstream
+    snippet does not show a `revision` argument. This is unverified against the real package.
+  - The voice prompt is built once at load with `create_voice_clone_prompt`.
+  - Streaming is ours: text is normalized and split into sentences, each synthesized
+    separately. HTTP (`/synthesize/stream`) and WebSocket (`/stream`, incremental text in) both
+    deliver audio per sentence so speech starts before the reply is complete.
+  - Sentences shorter than 12 characters are merged with the next one to avoid tiny synthesis
+    calls; "Dr.", "M.", "etc." never end a sentence.
+- **Consequences:** Time to first audio is bounded below by one sentence of synthesis.
+  Pronunciation quality for Malagasy depends on a Malagasy reference clip until a language
+  argument is confirmed. The `babakoto-tts` voice (Milestone 3) is the only path to a
+  commercially usable default. Nothing here has run on real weights.
+
+## ADR-0018: Shared `babakoto-common` package
+
+- **Context:** The STT and TTS services need the same security-sensitive body-size
+  middleware. A copy per service would drift.
+- **Decision:** `packages/common` (`babakoto_common`) holds code shared by services. It starts
+  with `BodySizeLimitMiddleware`. mypy targets now live in `pyproject.toml` (`[tool.mypy] files`),
+  so adding a package no longer means editing the justfile, CI and pre-commit config.
+- **Consequences:** Every service Dockerfile must copy `packages/common`. Keep the package
+  small and dependency-light (only Starlette).
+
+## ADR-0019: Service token, caps and limits on the speech services
+
+- **Context:** An automated review of the STT and TTS services found unauthenticated access to
+  a voice-cloning endpoint, size caps applied after allocation, an unbounded normalized-text
+  length and unbounded concurrent synthesis. While fixing it we also found that the normalizer
+  crashed on digit strings over 4300 characters (Python's integer string limit).
+- **Decision:**
+  - Every non-probe endpoint, HTTP and WebSocket, needs `Authorization: Bearer <SERVICE_TOKEN>`
+    (shared `BearerAuthMiddleware`, constant-time compare, minimum 16 characters). A service
+    refuses to start without a token unless `ALLOW_UNAUTHENTICATED=true`, so the default fails
+    closed. Probes stay open for orchestrators.
+  - Uvicorn gets `--ws-max-size` so oversized WebSocket frames are refused by the protocol
+    layer before the app sees them; the in-app check stays as a second line.
+  - TTS normalizes first, then rejects any sentence longer than `MAX_SPOKEN_CHARS` once spoken.
+    The sentence buffer cuts runs over 300 characters at a word boundary, and the WebSocket
+    limits buffered characters (not cumulative text), so long LLM replies are not cut off.
+  - A semaphore (`MAX_CONCURRENT_SYNTHESIS`) bounds parallel synthesis. There is no per-call
+    timeout because a thread running a model cannot be cancelled safely.
+  - Digit strings over 15 characters are read digit by digit.
+- **Consequences:** Callers (agent, API, notebooks) must send the token. Browsers cannot set
+  WebSocket headers, so these services must never be exposed to browsers directly; the agent is
+  the only intended client. Sentence splitting rescans a buffer of at most a few hundred
+  characters per message, which is bounded and was judged not worth an incremental scanner.

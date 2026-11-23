@@ -30,17 +30,6 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        args:
-          [
-            api/src,
-            packages/malagasy-text/src,
-            agent/src,
-            services/stt/src,
-            services/tts/src,
-            training/asr/src,
-            training/tts/src,
-            eval/src,
-          ]
       - id: prettier
         name: prettier
         entry: pnpm exec prettier --write --ignore-unknown

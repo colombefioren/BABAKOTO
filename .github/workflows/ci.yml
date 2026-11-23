@@ -22,7 +22,7 @@ jobs:
       - run: uv sync --all-packages --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run mypy api/src packages/malagasy-text/src agent/src services/stt/src services/tts/src training/asr/src training/tts/src eval/src
+      - run: uv run mypy
       - run: uv run pytest --cov --cov-report=xml --cov-fail-under=80
       - uses: actions/upload-artifact@v7
         with:

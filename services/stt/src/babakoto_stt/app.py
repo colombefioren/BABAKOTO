@@ -8,11 +8,12 @@ from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket
 
+from babakoto_common.auth import BearerAuthMiddleware
+from babakoto_common.limits import BodySizeLimitMiddleware
 from babakoto_stt import __version__
 from babakoto_stt.audio import AudioError, AudioTooLongError, FloatAudio, decode_wav
 from babakoto_stt.config import SttSettings
 from babakoto_stt.engine import SttEngine, build_engine
-from babakoto_stt.limits import BodySizeLimitMiddleware
 from babakoto_stt.vad import UtteranceSegmenter
 
 log = logging.getLogger(__name__)
@@ -34,6 +35,11 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
 
     app = FastAPI(title="Babakoto STT", version=__version__, lifespan=lifespan)
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_upload_bytes)
+    # Added last so it runs first: unauthenticated callers are refused before any body is read.
+    if settings.service_token:
+        app.add_middleware(BearerAuthMiddleware, token=settings.service_token)
+    else:
+        log.warning("running WITHOUT authentication (ALLOW_UNAUTHENTICATED=true): local use only")
 
     async def run(audio: FloatAudio) -> dict[str, Any]:
         result = await asyncio.to_thread(stt_engine.transcribe, audio)
@@ -53,10 +59,8 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
     async def transcribe(file: UploadFile = File(...)) -> dict[str, Any]:  # noqa: B008
         if not state["ready"]:
             raise HTTPException(status_code=503, detail="model not loaded")
-        # Read one byte past the cap so an oversized body is rejected without buffering it all.
-        body = await file.read(settings.max_upload_bytes + 1)
-        if len(body) > settings.max_upload_bytes:
-            raise HTTPException(status_code=413, detail="upload too large")
+        # The body size middleware has already enforced `max_upload_bytes`.
+        body = await file.read()
         try:
             audio = decode_wav(body, settings.max_audio_seconds)
         except AudioTooLongError as exc:

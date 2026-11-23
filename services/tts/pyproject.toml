@@ -4,7 +4,24 @@ version = "0.0.0"
 description = "Malagasy text-to-speech service"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-dependencies = []
+dependencies = [
+  "babakoto-common",
+  "babakoto-malagasy-text",
+  "fastapi>=0.115",
+  "numpy>=2.0",
+  "pydantic-settings>=2.6",
+  "uvicorn>=0.32",
+  "websockets>=13.0",
+]
+
+[project.optional-dependencies]
+# Heavy model runtimes, installed only in GPU images and notebooks.
+omnivoice = ["huggingface-hub>=0.26", "omnivoice", "torch>=2.5"]
+mms = ["torch>=2.5", "transformers>=4.46"]
+
+[tool.uv.sources]
+babakoto-common = { workspace = true }
+babakoto-malagasy-text = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

@@ -5,6 +5,7 @@ description = "Malagasy speech-to-text service"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 dependencies = [
+  "babakoto-common",
   "fastapi>=0.115",
   "numpy>=2.0",
   "pydantic-settings>=2.6",
@@ -16,6 +17,9 @@ dependencies = [
 [project.optional-dependencies]
 # Heavy model runtime, installed only in GPU images and notebooks.
 sunflower = ["accelerate>=1.0", "torch>=2.5", "transformers>=4.46"]
+
+[tool.uv.sources]
+babakoto-common = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

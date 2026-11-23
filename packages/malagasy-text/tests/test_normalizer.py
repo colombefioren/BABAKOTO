@@ -141,3 +141,9 @@ def test_at_least_100_cases() -> None:
 def test_normalize_is_idempotent_on_its_own_output(text: str) -> None:
     once = normalize(text)
     assert normalize(once) == once
+
+
+def test_very_long_digit_strings_do_not_crash() -> None:
+    spoken = normalize("9" * 100_000)
+    assert spoken.startswith("sivy sivy")
+    assert normalize("1" * 20) == " ".join(["iray"] * 20)

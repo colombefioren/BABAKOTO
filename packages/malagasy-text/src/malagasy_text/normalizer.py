@@ -23,6 +23,7 @@ _MONTHS = {
 
 # One number: "1.000.000", "12 500", "3,5" or "42". Space or dot groups are thousands.
 _NUM = r"\d{1,3}(?:\.\d{3})+(?!\d)|\d{1,3}(?:[  ]\d{3})+(?!\d)(?:,\d+)?|\d+(?:[.,]\d+)?"
+_MAX_DIGITS = 15
 _PHONE = re.compile(r"(?<!\d)0(?:2|3)\d[ .]?\d{2}[ .]?\d{3}[ .]?\d{2}(?!\d)")
 _DATE = re.compile(r"(?<!\d)(\d{1,2})/(\d{1,2})/(\d{4})(?!\d)")
 _TIME = re.compile(r"(?<!\d)(?P<hour>\d{1,2})(?:[hH](?P<m1>\d{2})?|:(?P<m2>\d{2}))(?![\d\w])")
@@ -55,6 +56,10 @@ def _replace(pattern: re.Pattern[str], text: str, fn: Callable[[re.Match[str]], 
 def _read_number(token: str) -> str:
     """Speak a numeric token: integers by value, decimals as integer + "faingo" + digits."""
     cleaned = token.replace(" ", "").replace(" ", "")
+    if len(cleaned) > _MAX_DIGITS:
+        # Very long digit strings are read digit by digit; `int()` would also hit Python's
+        # integer string conversion limit.
+        return digits_to_words(cleaned)
     if re.fullmatch(r"\d{1,3}(?:\.\d{3})+", cleaned):
         return number_to_words(int(cleaned.replace(".", "")))
     separator = "," if "," in cleaned else "."

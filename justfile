@@ -25,7 +25,7 @@ lint:
 
 # Type-check everything
 typecheck:
-    uv run mypy api/src packages/malagasy-text/src agent/src services/stt/src services/tts/src training/asr/src training/tts/src eval/src
+    uv run mypy
     pnpm typecheck
 
 # Run all unit tests with coverage
