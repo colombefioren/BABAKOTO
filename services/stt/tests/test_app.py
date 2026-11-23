@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
@@ -49,6 +51,31 @@ def test_transcribe_rejects_too_long_audio() -> None:
 def test_transcribe_rejects_oversized_upload() -> None:
     with make_client(max_upload_bytes=1000) as client:
         response = client.post("/transcribe", files={"file": ("a.wav", wav_bytes(tone(1.0)))})
+    assert response.status_code == 413
+
+
+def test_oversized_content_length_is_rejected_before_reading() -> None:
+    with make_client(max_upload_bytes=1000) as client:
+        response = client.post(
+            "/transcribe",
+            content=b"x" * 10_000,
+            headers={"content-type": "multipart/form-data; boundary=x"},
+        )
+    assert response.status_code == 413
+    assert response.json() == {"detail": "upload too large"}
+
+
+def test_oversized_chunked_body_is_rejected_without_content_length() -> None:
+    def chunks() -> Iterator[bytes]:
+        for _ in range(20):
+            yield b"x" * 1000
+
+    with make_client(max_upload_bytes=1000) as client:
+        response = client.post(
+            "/transcribe",
+            content=chunks(),
+            headers={"content-type": "multipart/form-data; boundary=x"},
+        )
     assert response.status_code == 413
 
 

@@ -12,6 +12,7 @@ from babakoto_stt import __version__
 from babakoto_stt.audio import AudioError, AudioTooLongError, FloatAudio, decode_wav
 from babakoto_stt.config import SttSettings
 from babakoto_stt.engine import SttEngine, build_engine
+from babakoto_stt.limits import BodySizeLimitMiddleware
 from babakoto_stt.vad import UtteranceSegmenter
 
 log = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
         state["ready"] = False
 
     app = FastAPI(title="Babakoto STT", version=__version__, lifespan=lifespan)
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_upload_bytes)
 
     async def run(audio: FloatAudio) -> dict[str, Any]:
         result = await asyncio.to_thread(stt_engine.transcribe, audio)
