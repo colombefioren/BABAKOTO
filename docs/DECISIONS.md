@@ -321,3 +321,15 @@ Format: context, options considered, decision, consequences. Newest last.
     `PLAYWRIGHT_CHROME_PATH` lets machines where the bundled browser cannot run use system Chrome.
 - **Consequences:** The `e2e` check should be added to branch protection once it has passed on
   main. ESLint now includes the React hooks rules.
+
+## ADR-0023: Token endpoint abuse guards
+
+- **Context:** `POST /api/token` is open (ADR-0022), so anyone who can reach it can start a
+  billable agent session. An automated review flagged the missing limits.
+- **Decision:** Reject cross-site browser requests (`Sec-Fetch-Site`, `Origin`), rate limit by
+  client address (10 per minute, in memory), and mint least-privilege tokens: microphone only,
+  no data publishing, 10-minute lifetime, random room.
+- **Consequences:** The limiter is per instance and trusts `X-Forwarded-For` only as a bucket
+  key, so it stops accidents and casual abuse, not a determined attacker. Public deployment
+  still needs an edge or WAF limit, authentication and a cap on concurrent rooms; these come
+  with the Milestone 3 dashboard and are tracked there.

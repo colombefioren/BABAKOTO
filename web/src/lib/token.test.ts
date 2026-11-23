@@ -39,7 +39,12 @@ describe('createSession', () => {
     const payload = claims(a.token);
     expect(payload.iss).toBe('key');
     expect(payload.sub).toBe(a.identity);
-    expect(payload.video).toMatchObject({ room: a.room, roomJoin: true });
+    expect(payload.video).toMatchObject({
+      room: a.room,
+      roomJoin: true,
+      canPublishData: false,
+      canPublishSources: ['microphone'],
+    });
     expect(payload.exp - payload.nbf).toBeLessThanOrEqual(600);
   });
 });

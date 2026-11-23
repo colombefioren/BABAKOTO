@@ -1,6 +1,6 @@
 /** Server-side LiveKit token minting. Never import this from client code. */
 
-import { AccessToken } from 'livekit-server-sdk';
+import { AccessToken, TrackSource } from 'livekit-server-sdk';
 
 export interface LiveKitConfig {
   url: string;
@@ -41,6 +41,14 @@ export async function createSession(config: LiveKitConfig): Promise<Session> {
   const room = `babakoto-${suffix}`;
   const identity = `visitor-${suffix.slice(0, 8)}`;
   const token = new AccessToken(config.apiKey, config.apiSecret, { identity, ttl: '10m' });
-  token.addGrant({ roomJoin: true, room, canPublish: true, canSubscribe: true });
+  // Least privilege: microphone only, no data messages (the agent publishes those, not the visitor).
+  token.addGrant({
+    roomJoin: true,
+    room,
+    canPublish: true,
+    canPublishSources: [TrackSource.MICROPHONE],
+    canPublishData: false,
+    canSubscribe: true,
+  });
   return { token: await token.toJwt(), url: config.url, room, identity };
 }
