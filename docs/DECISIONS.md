@@ -119,3 +119,25 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences:** Contributors cannot bypass CI. The owner can, so the one-commit shortcut
   must only be used after the same checks pass locally. Turn on admin enforcement and require
   one approval once a second maintainer joins.
+
+## ADR-0013: Malagasy normalizer rules and conventions
+
+- **Context:** TTS models read digits poorly in Malagasy. The normalizer must spell numbers,
+  money, dates, times and percentages as spoken words. No native speaker has reviewed the rules
+  yet.
+- **Options:** use a general number-to-words library; hand-written rules for Malagasy.
+- **Decision:** Hand-written, dependency-free rules in `packages/malagasy-text`.
+  - Cardinals: units, `ambin'ny folo` for 11-19, tens (`roapolo`, `telopolo`, `sivifolo`),
+    hundreds (`roanjato`, `eninjato`), then `arivo`, `tapitrisa`, `lavitrisa`.
+  - Parts are joined lowest first, with `amby` after a bare unit and `sy` otherwise.
+  - Thousands use the regular `<n> arivo` scheme everywhere, not the traditional `alina` (10,000)
+    and `hetsy` (100,000).
+  - Decimals read the integer, `faingo`, then each fractional digit.
+  - Space, NBSP or dot groups of three digits are thousand separators (`5.000` is 5000).
+  - Phone numbers (Malagasy 02x/03x formats) are read digit by digit.
+  - Numbers of 10**12 or more, and negative numbers, are not spelled (the latter raises).
+  - Times use 24-hour `ora X sy minitra Y`; dates use `<day> <Month> <year>`.
+- **Consequences:** Rules are testable and deterministic, with 100+ cases. Every case that
+  depends on a disputed form is marked `# NEEDS_REVIEW` and registered in
+  `docs/NEEDS_NATIVE_REVIEW.md`. Expect changes after review, so tests double as the review
+  checklist.
