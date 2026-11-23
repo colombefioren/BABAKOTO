@@ -329,7 +329,11 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Decision:** Reject cross-site browser requests (`Sec-Fetch-Site`, `Origin`), rate limit by
   client address (10 per minute, in memory), and mint least-privilege tokens: microphone only,
   no data publishing, 10-minute lifetime, random room.
-- **Consequences:** The limiter is per instance and trusts `X-Forwarded-For` only as a bucket
-  key, so it stops accidents and casual abuse, not a determined attacker. Public deployment
+- **Follow-up:** A second review found `X-Forwarded-For` spoofable and the key table
+  unbounded. `X-Forwarded-For` is now ignored unless `WEB_TRUSTED_PROXY_HOPS` says how many
+  proxies you run (the address is read from the right). Without it all visitors share one
+  bucket: safe but coarse. The table is capped at 10,000 keys and refuses new keys when full.
+- **Consequences:** The limiter is per instance, so it stops accidents and casual abuse, not a
+  determined attacker. Public deployment
   still needs an edge or WAF limit, authentication and a cap on concurrent rooms; these come
   with the Milestone 3 dashboard and are tracked there.
