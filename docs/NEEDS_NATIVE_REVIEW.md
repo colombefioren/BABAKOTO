@@ -8,3 +8,4 @@ native speaker approves it. Mark approvals with the reviewer's GitHub handle and
 | _none yet_                         |                                   |         |
 | agent/prompts/default.mg.md        | Default system prompt (all rules) | pending |
 | agent/prompts/first_message.mg.txt | Spoken greeting                   | pending |
+| eval/data/turns.mg.txt             | 10 scripted benchmark sentences   | pending |

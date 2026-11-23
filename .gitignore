@@ -72,3 +72,4 @@ test-results/
 .cache/
 site/
 coverage/
+eval/results/
