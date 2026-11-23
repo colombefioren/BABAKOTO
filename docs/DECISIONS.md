@@ -225,3 +225,27 @@ Format: context, options considered, decision, consequences. Newest last.
   so adding a package no longer means editing the justfile, CI and pre-commit config.
 - **Consequences:** Every service Dockerfile must copy `packages/common`. Keep the package
   small and dependency-light (only Starlette).
+
+## ADR-0019: Service token, caps and limits on the speech services
+
+- **Context:** An automated review of the STT and TTS services found unauthenticated access to
+  a voice-cloning endpoint, size caps applied after allocation, an unbounded normalized-text
+  length and unbounded concurrent synthesis. While fixing it we also found that the normalizer
+  crashed on digit strings over 4300 characters (Python's integer string limit).
+- **Decision:**
+  - Every non-probe endpoint, HTTP and WebSocket, needs `Authorization: Bearer <SERVICE_TOKEN>`
+    (shared `BearerAuthMiddleware`, constant-time compare, minimum 16 characters). A service
+    refuses to start without a token unless `ALLOW_UNAUTHENTICATED=true`, so the default fails
+    closed. Probes stay open for orchestrators.
+  - Uvicorn gets `--ws-max-size` so oversized WebSocket frames are refused by the protocol
+    layer before the app sees them; the in-app check stays as a second line.
+  - TTS normalizes first, then rejects any sentence longer than `MAX_SPOKEN_CHARS` once spoken.
+    The sentence buffer cuts runs over 300 characters at a word boundary, and the WebSocket
+    limits buffered characters (not cumulative text), so long LLM replies are not cut off.
+  - A semaphore (`MAX_CONCURRENT_SYNTHESIS`) bounds parallel synthesis. There is no per-call
+    timeout because a thread running a model cannot be cancelled safely.
+  - Digit strings over 15 characters are read digit by digit.
+- **Consequences:** Callers (agent, API, notebooks) must send the token. Browsers cannot set
+  WebSocket headers, so these services must never be exposed to browsers directly; the agent is
+  the only intended client. Sentence splitting rescans a buffer of at most a few hundred
+  characters per message, which is bounded and was judged not worth an incremental scanner.
