@@ -14,6 +14,8 @@ COPY services/tts/pyproject.toml services/tts/README.md services/tts/
 COPY training/asr/pyproject.toml training/asr/README.md training/asr/
 COPY training/tts/pyproject.toml training/tts/README.md training/tts/
 COPY eval/pyproject.toml eval/README.md eval/
+COPY packages/common/pyproject.toml packages/common/README.md packages/common/
+COPY packages/common/src packages/common/src
 RUN uv sync --frozen --no-dev --package babakoto-stt --extra sunflower --no-editable
 
 FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b

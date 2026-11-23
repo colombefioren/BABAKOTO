@@ -20,6 +20,7 @@ package = false
 
 [tool.uv.workspace]
 members = [
+  "packages/common",
   "packages/malagasy-text",
   "agent",
   "api",
@@ -31,6 +32,7 @@ members = [
 ]
 
 [tool.uv.sources]
+babakoto-common = { workspace = true }
 babakoto-malagasy-text = { workspace = true }
 babakoto-agent = { workspace = true }
 babakoto-api = { workspace = true }
@@ -43,7 +45,7 @@ babakoto-eval = { workspace = true }
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
+src = ["packages/common/src", "packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "RUF"]
@@ -56,19 +58,20 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "RUF"]
 strict = true
 python_version = "3.11"
 explicit_package_bases = true
-mypy_path = ["packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
+files = ["packages/common/src", "packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
+mypy_path = ["packages/common/src", "packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["torch", "transformers", "torch.*", "transformers.*"]
+module = ["torch", "transformers", "torch.*", "transformers.*", "huggingface_hub", "omnivoice"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["packages/malagasy-text/tests", "agent/tests", "api/tests", "services/stt/tests", "services/tts/tests", "training/asr/tests", "training/tts/tests", "eval/tests"]
+testpaths = ["packages/common/tests", "packages/malagasy-text/tests", "agent/tests", "api/tests", "services/stt/tests", "services/tts/tests", "training/asr/tests", "training/tts/tests", "eval/tests"]
 addopts = "-ra --import-mode=importlib"
 
 [tool.coverage.run]
-source = ["packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
+source = ["packages/common/src", "packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
 branch = true
 
 [tool.coverage.report]

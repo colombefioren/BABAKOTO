@@ -8,11 +8,11 @@ from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket
 
+from babakoto_common.limits import BodySizeLimitMiddleware
 from babakoto_stt import __version__
 from babakoto_stt.audio import AudioError, AudioTooLongError, FloatAudio, decode_wav
 from babakoto_stt.config import SttSettings
 from babakoto_stt.engine import SttEngine, build_engine
-from babakoto_stt.limits import BodySizeLimitMiddleware
 from babakoto_stt.vad import UtteranceSegmenter
 
 log = logging.getLogger(__name__)
@@ -53,10 +53,8 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
     async def transcribe(file: UploadFile = File(...)) -> dict[str, Any]:  # noqa: B008
         if not state["ready"]:
             raise HTTPException(status_code=503, detail="model not loaded")
-        # Read one byte past the cap so an oversized body is rejected without buffering it all.
-        body = await file.read(settings.max_upload_bytes + 1)
-        if len(body) > settings.max_upload_bytes:
-            raise HTTPException(status_code=413, detail="upload too large")
+        # The body size middleware has already enforced `max_upload_bytes`.
+        body = await file.read()
         try:
             audio = decode_wav(body, settings.max_audio_seconds)
         except AudioTooLongError as exc:

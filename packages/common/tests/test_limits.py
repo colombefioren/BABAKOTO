@@ -3,7 +3,7 @@ from typing import Any
 
 from starlette.types import Message, Receive, Scope, Send
 
-from babakoto_stt.limits import BodySizeLimitMiddleware
+from babakoto_common.limits import BodySizeLimitMiddleware
 
 
 async def _drain_app(scope: Scope, receive: Receive, send: Send) -> None:
