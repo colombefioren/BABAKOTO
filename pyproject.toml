@@ -59,6 +59,10 @@ explicit_package_bases = true
 mypy_path = ["packages/malagasy-text/src", "agent/src", "api/src", "services/stt/src", "services/tts/src", "training/asr/src", "training/tts/src", "eval/src"]
 plugins = ["pydantic.mypy"]
 
+[[tool.mypy.overrides]]
+module = ["torch", "transformers", "torch.*", "transformers.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["packages/malagasy-text/tests", "agent/tests", "api/tests", "services/stt/tests", "services/tts/tests", "training/asr/tests", "training/tts/tests", "eval/tests"]
 addopts = "-ra --import-mode=importlib"

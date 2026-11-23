@@ -4,7 +4,18 @@ version = "0.0.0"
 description = "Malagasy speech-to-text service"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-dependencies = []
+dependencies = [
+  "fastapi>=0.115",
+  "numpy>=2.0",
+  "pydantic-settings>=2.6",
+  "python-multipart>=0.0.20",
+  "uvicorn>=0.32",
+  "websockets>=13.0",
+]
+
+[project.optional-dependencies]
+# Heavy model runtime, installed only in GPU images and notebooks.
+sunflower = ["accelerate>=1.0", "torch>=2.5", "transformers>=4.46"]
 
 [build-system]
 requires = ["hatchling"]
