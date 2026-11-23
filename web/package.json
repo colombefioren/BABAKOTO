@@ -8,16 +8,29 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.10.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitest/coverage-v8": "^5.1.1",
     "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.16.0",
     "vitest": "^5.1.1"
+  },
+  "dependencies": {
+    "livekit-client": "^2.25.0",
+    "livekit-server-sdk": "^2.20.1",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

@@ -45,6 +45,21 @@ jobs:
       - run: pnpm test
       - run: pnpm format:check
 
+  e2e:
+    name: Web end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter babakoto-web build
+      - run: pnpm --filter babakoto-web exec playwright install --with-deps chromium
+      - run: pnpm --filter babakoto-web e2e
+
   docker:
     name: Docker build (api)
     runs-on: ubuntu-latest
