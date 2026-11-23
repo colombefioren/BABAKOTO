@@ -33,16 +33,16 @@ Providers are chosen by config, not code:
 
 ## Repository layout
 
-| Path | Purpose |
-| ---- | ------- |
-| `agent/` | LiveKit Agents worker |
-| `services/stt`, `services/tts` | Model-serving FastAPI services |
-| `api/` | Backend: agents, knowledge base, tools, conversations |
-| `web/` | Dashboard, playground, embeddable widget |
-| `training/` | ASR and TTS data pipelines and fine-tuning |
-| `eval/` | WER and latency benchmarks |
-| `packages/malagasy-text/` | Malagasy text normalization for TTS |
-| `infra/` | Docker Compose, Dockerfiles, deploy docs |
+| Path                           | Purpose                                               |
+| ------------------------------ | ----------------------------------------------------- |
+| `agent/`                       | LiveKit Agents worker                                 |
+| `services/stt`, `services/tts` | Model-serving FastAPI services                        |
+| `api/`                         | Backend: agents, knowledge base, tools, conversations |
+| `web/`                         | Dashboard, playground, embeddable widget              |
+| `training/`                    | ASR and TTS data pipelines and fine-tuning            |
+| `eval/`                        | WER and latency benchmarks                            |
+| `packages/malagasy-text/`      | Malagasy text normalization for TTS                   |
+| `infra/`                       | Docker Compose, Dockerfiles, deploy docs              |
 
 ## Quickstart
 
