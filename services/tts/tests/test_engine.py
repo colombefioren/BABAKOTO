@@ -16,6 +16,7 @@ def omnivoice_settings(tmp_path: Path) -> TtsSettings:
     clip.write_bytes(b"RIFF")
     return TtsSettings(
         _env_file=None,
+        allow_unauthenticated=True,
         tts_engine="omnivoice",
         allow_non_commercial_assets=True,
         omnivoice_model_revision="rev1",
@@ -27,6 +28,7 @@ def omnivoice_settings(tmp_path: Path) -> TtsSettings:
 def mms_settings() -> TtsSettings:
     return TtsSettings(
         _env_file=None,
+        allow_unauthenticated=True,
         tts_engine="mms",
         allow_non_commercial_assets=True,
         mms_model_revision="rev2",
@@ -53,7 +55,7 @@ def test_build_engine_warns_for_non_commercial(
 
 def test_build_engine_fake_does_not_warn(caplog: pytest.LogCaptureFixture) -> None:
     with caplog.at_level(logging.WARNING):
-        build_engine(TtsSettings(_env_file=None, tts_engine="fake"))
+        build_engine(TtsSettings(_env_file=None, tts_engine="fake", allow_unauthenticated=True))
     assert "NON-COMMERCIAL" not in caplog.text
 
 

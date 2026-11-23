@@ -5,12 +5,18 @@ from typing import Literal
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from babakoto_common.auth import MIN_TOKEN_LENGTH
+
 
 class SttSettings(BaseSettings):
     """STT configuration read from environment variables."""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # Shared secret for service-to-service calls (Authorization: Bearer <token>). Required unless
+    # ALLOW_UNAUTHENTICATED=true, which is for local development only.
+    service_token: str = ""
+    allow_unauthenticated: bool = False
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     # `fake` returns canned text and is for tests and wiring checks only.
     stt_engine: Literal["sunflower", "fake"] = "sunflower"
@@ -30,6 +36,17 @@ class SttSettings(BaseSettings):
     vad_threshold_db: float = -40.0
     vad_silence_ms: int = 500
     vad_min_speech_ms: int = 200
+
+    @model_validator(mode="after")
+    def _require_auth(self) -> "SttSettings":
+        if not self.service_token and not self.allow_unauthenticated:
+            raise ValueError(
+                f"SERVICE_TOKEN must be set (at least {MIN_TOKEN_LENGTH} characters), or set "
+                "ALLOW_UNAUTHENTICATED=true for local development only"
+            )
+        if self.service_token and len(self.service_token) < MIN_TOKEN_LENGTH:
+            raise ValueError(f"SERVICE_TOKEN must be at least {MIN_TOKEN_LENGTH} characters")
+        return self
 
     @model_validator(mode="after")
     def _require_revision(self) -> "SttSettings":

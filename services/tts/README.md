@@ -11,6 +11,10 @@ FastAPI service that turns Malagasy text into speech.
 
 Every sentence goes through `malagasy-text` (numbers, money, dates, abbreviations) before synthesis.
 
+## Authentication
+
+Every endpoint except `/healthz` and `/readyz` needs `Authorization: Bearer $SERVICE_TOKEN`. The service refuses to start without `SERVICE_TOKEN` (16+ characters) unless `ALLOW_UNAUTHENTICATED=true`, which is for local development only. Keep the service on an internal network: only the agent and API should reach it.
+
 ## Engines
 
 | `TTS_ENGINE`          | Weights              | License                     | Notes                                                                                                       |
@@ -23,7 +27,7 @@ Both real engines use non-commercial weights, so the service refuses to start un
 `ALLOW_NON_COMMERCIAL_ASSETS=true`, and logs a warning when it does. Never use them in production.
 
 ```sh
-TTS_ENGINE=fake uv run uvicorn --factory babakoto_tts.app:create_app_from_env --port 8002
+ALLOW_UNAUTHENTICATED=true TTS_ENGINE=fake uv run uvicorn --factory babakoto_tts.app:create_app_from_env --port 8002
 ```
 
 The model engines are covered by unit tests with a fake runtime only. They have not yet run against

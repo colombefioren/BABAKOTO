@@ -26,9 +26,15 @@ class SentenceBuffer:
     do not split. Text left over at the end is returned by `flush`.
     """
 
-    def __init__(self, min_chars: int = 12) -> None:
+    def __init__(self, min_chars: int = 12, max_chars: int = 300) -> None:
         self._min_chars = min_chars
+        self._max_chars = max_chars
         self._buffer = ""
+
+    @property
+    def pending_chars(self) -> int:
+        """Characters held back, waiting for a sentence end."""
+        return len(self._buffer)
 
     def push(self, text: str) -> list[str]:
         self._buffer += text
@@ -41,6 +47,12 @@ class SentenceBuffer:
             sentences.append(candidate.strip())
             start = match.end()
         self._buffer = self._buffer[start:]
+        # No terminator in sight: cut long runs so one "sentence" cannot grow without bound.
+        while len(self._buffer) > self._max_chars:
+            cut = self._buffer.rfind(" ", 0, self._max_chars)
+            cut = cut if cut > 0 else self._max_chars
+            sentences.append(self._buffer[:cut].strip())
+            self._buffer = self._buffer[cut:].lstrip()
         return sentences
 
     def flush(self) -> list[str]:

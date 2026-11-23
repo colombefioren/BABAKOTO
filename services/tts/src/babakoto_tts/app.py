@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException, Response, WebSocket
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from babakoto_common.auth import BearerAuthMiddleware
 from babakoto_common.limits import BodySizeLimitMiddleware
 from babakoto_tts import __version__
 from babakoto_tts.audio import to_pcm16, to_wav
@@ -44,9 +45,28 @@ def create_app(settings: TtsSettings, engine: TtsEngine | None = None) -> FastAP
     app = FastAPI(title="Babakoto TTS", version=__version__, lifespan=lifespan)
     # JSON bodies are small: text is capped, with room for escaping.
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_text_chars * 8)
+    # Added last so it runs first: unauthenticated callers are refused before any body is read.
+    if settings.service_token:
+        app.add_middleware(BearerAuthMiddleware, token=settings.service_token)
+    else:
+        log.warning("running WITHOUT authentication (ALLOW_UNAUTHENTICATED=true): local use only")
 
-    async def speak(sentence: str) -> FloatAudio:
-        return await asyncio.to_thread(tts_engine.synthesize, prepare(sentence))
+    gate = asyncio.Semaphore(settings.max_concurrent_synthesis)
+
+    def spoken(sentence: str) -> str:
+        """Normalize a sentence and refuse it if normalization made it too long."""
+        text = prepare(sentence)
+        if len(text) > settings.max_spoken_chars:
+            raise HTTPException(
+                status_code=413,
+                detail=f"sentence longer than {settings.max_spoken_chars} characters once spoken",
+            )
+        return text
+
+    async def speak(text: str) -> FloatAudio:
+        """Synthesize already-normalized text, at most `max_concurrent_synthesis` at a time."""
+        async with gate:
+            return await asyncio.to_thread(tts_engine.synthesize, text)
 
     def check(text: str) -> None:
         if not state["ready"]:
@@ -72,7 +92,8 @@ def create_app(settings: TtsSettings, engine: TtsEngine | None = None) -> FastAP
         check(request.text)
         import numpy as np
 
-        parts = [await speak(s) for s in split_sentences(request.text)]
+        texts = [spoken(s) for s in split_sentences(request.text)]
+        parts = [await speak(t) for t in texts]
         audio = np.concatenate(parts) if parts else np.empty(0, dtype=np.float32)
         return Response(to_wav(audio, tts_engine.sample_rate), media_type="audio/wav")
 
@@ -80,11 +101,11 @@ def create_app(settings: TtsSettings, engine: TtsEngine | None = None) -> FastAP
     async def synthesize_stream(request: SynthesizeRequest) -> StreamingResponse:
         """Raw PCM16 mono, one sentence at a time, so playback starts after the first one."""
         check(request.text)
-        sentences = split_sentences(request.text)
+        texts = [spoken(s) for s in split_sentences(request.text)]
 
         async def chunks() -> AsyncIterator[bytes]:
-            for sentence in sentences:
-                yield to_pcm16(await speak(sentence))
+            for text in texts:
+                yield to_pcm16(await speak(text))
 
         return StreamingResponse(
             chunks(),
@@ -105,11 +126,10 @@ def create_app(settings: TtsSettings, engine: TtsEngine | None = None) -> FastAP
             await ws.close(code=1013, reason="model not loaded")
             return
         buffer = SentenceBuffer()
-        pending = 0
 
         async def emit(sentences: list[str]) -> None:
             for sentence in sentences:
-                audio = await speak(sentence)
+                audio = await speak(spoken(sentence))
                 await ws.send_json(
                     {"type": "sentence", "text": sentence, "sample_rate": tts_engine.sample_rate}
                 )
@@ -121,7 +141,8 @@ def create_app(settings: TtsSettings, engine: TtsEngine | None = None) -> FastAP
                 return
             raw = message.get("text")
             if raw is None:
-                continue
+                await ws.close(code=1003, reason="text frames only")
+                return
             if len(raw) > settings.max_text_chars * 8:
                 await ws.close(code=1009, reason="message too large")
                 return
@@ -131,15 +152,15 @@ def create_app(settings: TtsSettings, engine: TtsEngine | None = None) -> FastAP
                 await ws.send_json({"type": "error", "detail": "messages must be JSON"})
                 continue
             text = str(payload.get("text", ""))
-            pending += len(text)
-            if pending > settings.max_text_chars:
-                await ws.close(code=1009, reason="too much text without a sentence end")
+            try:
+                await emit(buffer.push(text))
+                if payload.get("flush"):
+                    await emit(buffer.flush())
+                    await ws.send_json({"type": "done"})
+            except HTTPException as exc:
+                await ws.send_json({"type": "error", "detail": exc.detail})
+                await ws.close(code=1009)
                 return
-            await emit(buffer.push(text))
-            if payload.get("flush"):
-                await emit(buffer.flush())
-                pending = 0
-                await ws.send_json({"type": "done"})
 
     return app
 

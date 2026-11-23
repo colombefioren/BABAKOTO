@@ -39,3 +39,18 @@ def test_decimal_point_without_space_never_splits() -> None:
 
 def test_prepare_normalizes_numbers() -> None:
     assert prepare("Mitentina 5000 Ar") == "Mitentina dimy arivo ariary"
+
+
+def test_long_runs_without_terminators_are_cut_at_word_boundaries() -> None:
+    buffer = SentenceBuffer(max_chars=50)
+    out = buffer.push("mot " * 40)
+    assert out
+    assert all(len(sentence) <= 50 for sentence in out)
+    assert buffer.pending_chars <= 50
+
+
+def test_unbroken_text_is_hard_cut() -> None:
+    buffer = SentenceBuffer(max_chars=20)
+    out = buffer.push("x" * 100)
+    assert [len(s) for s in out] == [20, 20, 20, 20]
+    assert buffer.pending_chars == 20

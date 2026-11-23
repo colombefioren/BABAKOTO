@@ -7,6 +7,8 @@ from babakoto_tts.config import TtsSettings
 
 
 def make(**kwargs: object) -> TtsSettings:
+    kwargs.setdefault("allow_unauthenticated", True)
+    kwargs.setdefault("allow_unauthenticated", True)
     return TtsSettings(_env_file=None, **kwargs)  # type: ignore[arg-type]
 
 
@@ -61,3 +63,13 @@ def test_omnivoice_valid(tmp_path: Path) -> None:
 def test_mms_needs_revision() -> None:
     with pytest.raises(ValidationError, match="MMS_MODEL_REVISION"):
         make(tts_engine="mms", allow_non_commercial_assets=True)
+
+
+def test_service_token_is_required_by_default() -> None:
+    with pytest.raises(ValidationError, match="SERVICE_TOKEN"):
+        make(tts_engine="fake", allow_unauthenticated=False)
+
+
+def test_short_service_token_is_rejected() -> None:
+    with pytest.raises(ValidationError, match="at least"):
+        make(tts_engine="fake", allow_unauthenticated=False, service_token="short")

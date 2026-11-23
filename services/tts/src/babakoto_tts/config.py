@@ -6,6 +6,8 @@ from typing import Literal
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from babakoto_common.auth import MIN_TOKEN_LENGTH
+
 # Engines whose weights are non-commercial (CC-BY-NC). See ADR-0003 and THIRD_PARTY_LICENSES.md.
 NON_COMMERCIAL_ENGINES = frozenset({"omnivoice", "mms"})
 
@@ -15,6 +17,10 @@ class TtsSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # Shared secret for service-to-service calls (Authorization: Bearer <token>). Required unless
+    # ALLOW_UNAUTHENTICATED=true, which is for local development only.
+    service_token: str = ""
+    allow_unauthenticated: bool = False
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     tts_engine: Literal["omnivoice", "mms", "fake"] = "omnivoice"
     # Off by default. Required for every engine whose weights are non-commercial.
@@ -34,6 +40,21 @@ class TtsSettings(BaseSettings):
     mms_device: str = "cuda"
 
     max_text_chars: int = 2000
+    # Longest sentence after normalization (digits expand into many words).
+    max_spoken_chars: int = 1500
+    # Synthesis calls running at once; the rest wait. Bounds GPU contention.
+    max_concurrent_synthesis: int = 2
+
+    @model_validator(mode="after")
+    def _require_auth(self) -> "TtsSettings":
+        if not self.service_token and not self.allow_unauthenticated:
+            raise ValueError(
+                f"SERVICE_TOKEN must be set (at least {MIN_TOKEN_LENGTH} characters), or set "
+                "ALLOW_UNAUTHENTICATED=true for local development only"
+            )
+        if self.service_token and len(self.service_token) < MIN_TOKEN_LENGTH:
+            raise ValueError(f"SERVICE_TOKEN must be at least {MIN_TOKEN_LENGTH} characters")
+        return self
 
     @model_validator(mode="after")
     def _validate_engine(self) -> "TtsSettings":

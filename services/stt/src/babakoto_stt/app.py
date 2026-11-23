@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket
 
+from babakoto_common.auth import BearerAuthMiddleware
 from babakoto_common.limits import BodySizeLimitMiddleware
 from babakoto_stt import __version__
 from babakoto_stt.audio import AudioError, AudioTooLongError, FloatAudio, decode_wav
@@ -34,6 +35,11 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
 
     app = FastAPI(title="Babakoto STT", version=__version__, lifespan=lifespan)
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_upload_bytes)
+    # Added last so it runs first: unauthenticated callers are refused before any body is read.
+    if settings.service_token:
+        app.add_middleware(BearerAuthMiddleware, token=settings.service_token)
+    else:
+        log.warning("running WITHOUT authentication (ALLOW_UNAUTHENTICATED=true): local use only")
 
     async def run(audio: FloatAudio) -> dict[str, Any]:
         result = await asyncio.to_thread(stt_engine.transcribe, audio)

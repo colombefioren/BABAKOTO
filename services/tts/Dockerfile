@@ -26,4 +26,4 @@ COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH" HF_HOME=/home/babakoto/.cache/huggingface
 USER 10001
 EXPOSE 8002
-CMD ["uvicorn", "--factory", "babakoto_tts.app:create_app_from_env", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "--factory", "babakoto_tts.app:create_app_from_env", "--host", "0.0.0.0", "--port", "8002", "--ws-max-size", "16384"]

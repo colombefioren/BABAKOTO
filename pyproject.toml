@@ -51,7 +51,7 @@ src = ["packages/common/src", "packages/malagasy-text/src", "agent/src", "api/sr
 select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101"]
+"**/tests/**" = ["S101", "S105", "S106"]
 "packages/malagasy-text/**" = ["RUF001"]  # curly quotes and NBSP are test inputs
 
 [tool.mypy]

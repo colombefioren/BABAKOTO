@@ -14,6 +14,7 @@ def settings() -> SttSettings:
     return SttSettings(
         _env_file=None,
         stt_engine="sunflower",
+        allow_unauthenticated=True,
         sunflower_model_revision="rev1",
         sunflower_device="cpu",
     )
@@ -27,7 +28,7 @@ def test_fake_engine_reports_duration() -> None:
 
 
 def test_build_engine_picks_fake() -> None:
-    cfg = SttSettings(_env_file=None, stt_engine="fake")
+    cfg = SttSettings(_env_file=None, stt_engine="fake", allow_unauthenticated=True)
     assert isinstance(build_engine(cfg), FakeEngine)
 
 

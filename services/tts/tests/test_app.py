@@ -1,5 +1,7 @@
 import io
 import json
+import threading
+import time
 import wave
 
 import numpy as np
@@ -23,7 +25,7 @@ class RecordingEngine(FakeEngine):
 
 
 def make(engine: RecordingEngine | None = None, **overrides: object) -> TestClient:
-    cfg = TtsSettings(_env_file=None, tts_engine="fake", **overrides)  # type: ignore[arg-type]
+    cfg = TtsSettings(_env_file=None, tts_engine="fake", allow_unauthenticated=True, **overrides)  # type: ignore[arg-type]
     return TestClient(create_app(cfg, engine or RecordingEngine()))
 
 
@@ -109,21 +111,89 @@ def test_websocket_streams_sentences_as_text_arrives() -> None:
         assert ws.receive_json() == {"type": "done"}
 
 
-def test_websocket_reports_bad_json_and_ignores_binary() -> None:
+def test_websocket_reports_bad_json() -> None:
     with make() as client, client.websocket_connect("/stream") as ws:
         ws.send_text("not json")
         assert ws.receive_json()["type"] == "error"
-        ws.send_bytes(b"ignored")
         ws.send_text(json.dumps({"flush": True}))
         assert ws.receive_json() == {"type": "done"}
 
 
-def test_websocket_closes_on_too_much_text_without_sentence_end() -> None:
-    with make(max_text_chars=30) as client, client.websocket_connect("/stream") as ws:
-        ws.send_text(json.dumps({"text": "a" * 31}))
+def test_websocket_cuts_long_runs_without_a_sentence_end() -> None:
+    engine = RecordingEngine()
+    with make(engine) as client, client.websocket_connect("/stream") as ws:
+        ws.send_text(json.dumps({"text": "mot " * 200}))
+        header = ws.receive_json()
+        ws.receive_bytes()
+    assert header["type"] == "sentence"
+    assert len(engine.spoken[0]) <= 300
+
+
+def test_long_replies_are_not_cut_off_by_a_cumulative_limit() -> None:
+    engine = RecordingEngine()
+    with make(engine, max_text_chars=100) as client, client.websocket_connect("/stream") as ws:
+        for _ in range(10):
+            ws.send_text(json.dumps({"text": "Salama tompoko ry namana. "}))
+            ws.receive_json()
+            ws.receive_bytes()
+    assert len(engine.spoken) == 10
+
+
+def test_websocket_rejects_binary_frames() -> None:
+    with make() as client, client.websocket_connect("/stream") as ws:
+        ws.send_bytes(b"audio")
         with pytest.raises(WebSocketDisconnect) as info:
             ws.receive_json()
-    assert info.value.code == 1009
+    assert info.value.code == 1003
+
+
+def test_sentence_too_long_once_spoken_is_rejected() -> None:
+    digits = "1" * 400 + "."
+    with make(max_spoken_chars=100) as client:
+        assert client.post("/synthesize", json={"text": digits}).status_code == 413
+        assert client.post("/synthesize/stream", json={"text": digits}).status_code == 413
+        with client.websocket_connect("/stream") as ws:
+            ws.send_text(json.dumps({"text": digits + " ", "flush": True}))
+            assert ws.receive_json()["type"] == "error"
+
+
+def test_synthesis_concurrency_is_bounded() -> None:
+    class Probe(RecordingEngine):
+        running = 0
+        peak = 0
+
+        def synthesize(self, text: str) -> FloatAudio:
+            Probe.running += 1
+            Probe.peak = max(Probe.peak, Probe.running)
+            time.sleep(0.05)
+            Probe.running -= 1
+            return super().synthesize(text)
+
+    with make(Probe(), max_concurrent_synthesis=1) as client:
+        threads = [
+            threading.Thread(
+                target=client.post, args=("/synthesize",), kwargs={"json": {"text": "Salama"}}
+            )
+            for _ in range(4)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+    assert Probe.peak == 1
+
+
+def test_token_protects_every_endpoint_but_probes() -> None:
+    token = "s" * 24
+    cfg = TtsSettings(_env_file=None, tts_engine="fake", service_token=token)
+    with TestClient(create_app(cfg, RecordingEngine())) as client:
+        assert client.get("/healthz").status_code == 200
+        assert client.post("/synthesize", json={"text": "Salama"}).status_code == 401
+        auth = {"Authorization": f"Bearer {token}"}
+        assert client.post("/synthesize", json={"text": "Salama"}, headers=auth).status_code == 200
+        with pytest.raises(WebSocketDisconnect) as info, client.websocket_connect("/stream"):
+            pass
+        assert info.value.code == 1008
 
 
 def test_websocket_closes_on_oversized_message() -> None:
@@ -142,6 +212,7 @@ def test_websocket_before_ready_is_closed() -> None:
 
 def test_app_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TTS_ENGINE", "fake")
+    monkeypatch.setenv("ALLOW_UNAUTHENTICATED", "true")
     with TestClient(create_app_from_env()) as client:
         assert client.get("/readyz").status_code == 200
 

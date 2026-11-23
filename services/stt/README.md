@@ -8,10 +8,14 @@ FastAPI service that wraps SunflowerASR (Whisper large-v3 fine-tune) for Malagas
 | `WS /stream`                  | Send binary PCM16 16 kHz mono chunks; get one JSON `final` per utterance. Send text `end` to flush |
 | `GET /healthz`, `GET /readyz` | Liveness and readiness (ready once the model is loaded)                                            |
 
+## Authentication
+
+Every endpoint except `/healthz` and `/readyz` needs `Authorization: Bearer $SERVICE_TOKEN`. The service refuses to start without `SERVICE_TOKEN` (16+ characters) unless `ALLOW_UNAUTHENTICATED=true`, which is for local development only. Keep the service on an internal network: only the agent and API should reach it.
+
 Run for development without a model:
 
 ```sh
-STT_ENGINE=fake uv run uvicorn --factory babakoto_stt.app:create_app_from_env --port 8001
+ALLOW_UNAUTHENTICATED=true STT_ENGINE=fake uv run uvicorn --factory babakoto_stt.app:create_app_from_env --port 8001
 ```
 
 Run with the real model (GPU, gated repo, needs `HF_TOKEN` and a pinned `SUNFLOWER_MODEL_REVISION`):
