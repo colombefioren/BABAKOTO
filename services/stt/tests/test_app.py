@@ -46,6 +46,20 @@ def test_transcribe_rejects_too_long_audio() -> None:
     assert response.status_code == 413
 
 
+def test_transcribe_rejects_oversized_upload() -> None:
+    with make_client(max_upload_bytes=1000) as client:
+        response = client.post("/transcribe", files={"file": ("a.wav", wav_bytes(tone(1.0)))})
+    assert response.status_code == 413
+
+
+def test_stream_closes_on_oversized_message() -> None:
+    with make_client(max_ws_chunk_bytes=100) as client, client.websocket_connect("/stream") as ws:
+        ws.send_bytes(b"\x00" * 200)
+        with pytest.raises(WebSocketDisconnect) as info:
+            ws.receive_json()
+    assert info.value.code == 1009
+
+
 def test_transcribe_before_ready_is_503() -> None:
     response = make_client().post("/transcribe", files={"file": ("a.wav", wav_bytes(tone(0.2)))})
     assert response.status_code == 503

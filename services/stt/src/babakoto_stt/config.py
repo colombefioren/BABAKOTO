@@ -23,6 +23,9 @@ class SttSettings(BaseSettings):
     hf_token: str = ""
     # Seconds of audio above which /transcribe is rejected.
     max_audio_seconds: float = 60.0
+    # Largest accepted upload and WebSocket message, in bytes.
+    max_upload_bytes: int = 16_000_000
+    max_ws_chunk_bytes: int = 262_144
     # Streaming VAD: RMS threshold in dBFS, silence that ends an utterance, shortest speech kept.
     vad_threshold_db: float = -40.0
     vad_silence_ms: int = 500

@@ -15,6 +15,10 @@ class AudioError(ValueError):
     """The audio payload cannot be used."""
 
 
+class AudioTooLongError(AudioError):
+    """The audio is longer than the configured limit."""
+
+
 def pcm16_to_float(pcm: bytes) -> FloatAudio:
     """Convert little-endian 16-bit mono PCM bytes to float32 in [-1, 1]."""
     if len(pcm) % 2:
@@ -37,14 +41,29 @@ def resample(audio: FloatAudio, source_rate: int, target_rate: int = SAMPLE_RATE
     return np.interp(positions, np.arange(audio.size), audio).astype(np.float32)
 
 
-def decode_wav(data: bytes) -> FloatAudio:
-    """Decode a 16-bit PCM WAV file to 16 kHz mono float32."""
+MIN_RATE = 8_000
+MAX_RATE = 48_000
+MAX_CHANNELS = 2
+
+
+def decode_wav(data: bytes, max_seconds: float) -> FloatAudio:
+    """Decode a 16-bit PCM WAV file to 16 kHz mono float32.
+
+    The header is checked before any frame is read, so an oversized or odd file is rejected
+    without allocating its samples.
+    """
     try:
         with wave.open(io.BytesIO(data), "rb") as wav:
             if wav.getsampwidth() != 2:
                 raise AudioError("only 16-bit PCM WAV is supported")
             channels = wav.getnchannels()
             rate = wav.getframerate()
+            if not MIN_RATE <= rate <= MAX_RATE:
+                raise AudioError(f"sample rate must be between {MIN_RATE} and {MAX_RATE} Hz")
+            if channels > MAX_CHANNELS:
+                raise AudioError(f"at most {MAX_CHANNELS} channels are supported")
+            if wav.getnframes() / rate > max_seconds:
+                raise AudioTooLongError(f"audio longer than {max_seconds} s")
             frames = wav.readframes(wav.getnframes())
     except (wave.Error, EOFError) as exc:
         raise AudioError(f"invalid WAV file: {exc}") from exc

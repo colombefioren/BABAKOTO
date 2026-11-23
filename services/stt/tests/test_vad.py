@@ -6,7 +6,9 @@ from babakoto_stt.vad import UtteranceSegmenter
 
 
 def make() -> UtteranceSegmenter:
-    return UtteranceSegmenter(threshold_db=-40.0, silence_ms=300, min_speech_ms=150)
+    return UtteranceSegmenter(
+        threshold_db=-40.0, silence_ms=300, min_speech_ms=150, max_utterance_s=2.0
+    )
 
 
 def feed_all(seg: UtteranceSegmenter, audio: np.ndarray, chunk_s: float = 0.1) -> list[np.ndarray]:
@@ -56,3 +58,10 @@ def test_chunks_not_aligned_to_frames_still_work() -> None:
     seg = make()
     audio = np.concatenate([tone(0.5), silence(0.6)])
     assert len(feed_all(seg, audio, chunk_s=0.0137)) == 1
+
+
+def test_very_long_speech_is_cut_at_the_cap() -> None:
+    seg = make()
+    utterances = feed_all(seg, tone(5.0))
+    assert len(utterances) == 2
+    assert all(u.size <= 2 * 16000 for u in utterances)

@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket
 
 from babakoto_stt import __version__
-from babakoto_stt.audio import SAMPLE_RATE, AudioError, FloatAudio, decode_wav
+from babakoto_stt.audio import AudioError, AudioTooLongError, FloatAudio, decode_wav
 from babakoto_stt.config import SttSettings
 from babakoto_stt.engine import SttEngine, build_engine
 from babakoto_stt.vad import UtteranceSegmenter
@@ -51,14 +51,16 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
     async def transcribe(file: UploadFile = File(...)) -> dict[str, Any]:  # noqa: B008
         if not state["ready"]:
             raise HTTPException(status_code=503, detail="model not loaded")
+        # Read one byte past the cap so an oversized body is rejected without buffering it all.
+        body = await file.read(settings.max_upload_bytes + 1)
+        if len(body) > settings.max_upload_bytes:
+            raise HTTPException(status_code=413, detail="upload too large")
         try:
-            audio = decode_wav(await file.read())
+            audio = decode_wav(body, settings.max_audio_seconds)
+        except AudioTooLongError as exc:
+            raise HTTPException(status_code=413, detail=str(exc)) from exc
         except AudioError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
-        if audio.size / SAMPLE_RATE > settings.max_audio_seconds:
-            raise HTTPException(
-                status_code=413, detail=f"audio longer than {settings.max_audio_seconds} s"
-            )
         return await run(audio)
 
     @app.websocket("/stream")
@@ -72,7 +74,10 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
             await ws.close(code=1013, reason="model not loaded")
             return
         segmenter = UtteranceSegmenter(
-            settings.vad_threshold_db, settings.vad_silence_ms, settings.vad_min_speech_ms
+            settings.vad_threshold_db,
+            settings.vad_silence_ms,
+            settings.vad_min_speech_ms,
+            settings.max_audio_seconds,
         )
         while True:
             message = await ws.receive()
@@ -87,6 +92,9 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
             data = message.get("bytes")
             if not data:
                 continue
+            if len(data) > settings.max_ws_chunk_bytes:
+                await ws.close(code=1009, reason="message too large")
+                return
             try:
                 utterances = segmenter.feed(data)
             except AudioError as exc:

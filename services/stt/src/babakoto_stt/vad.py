@@ -20,10 +20,13 @@ def _rms_db(frame: FloatAudio) -> float:
 class UtteranceSegmenter:
     """Feed PCM16 chunks; get back complete utterances as float32 arrays."""
 
-    def __init__(self, threshold_db: float, silence_ms: int, min_speech_ms: int) -> None:
+    def __init__(
+        self, threshold_db: float, silence_ms: int, min_speech_ms: int, max_utterance_s: float
+    ) -> None:
         self._threshold_db = threshold_db
         self._silence_frames = max(1, silence_ms // FRAME_MS)
         self._min_speech_frames = max(1, min_speech_ms // FRAME_MS)
+        self._max_frames = max(1, int(max_utterance_s * 1000) // FRAME_MS)
         self._pending = np.empty(0, dtype=np.float32)
         self._utterance: list[FloatAudio] = []
         self._speech_frames = 0
@@ -50,7 +53,8 @@ class UtteranceSegmenter:
             self._speech_frames += 1
             self._silent_run = 0
             self._utterance.append(frame)
-            return None
+            # Bound memory and latency: cut a very long utterance instead of growing forever.
+            return self._finish() if len(self._utterance) >= self._max_frames else None
         if not self._utterance:
             return None
         self._utterance.append(frame)
