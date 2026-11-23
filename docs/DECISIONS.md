@@ -249,3 +249,32 @@ Format: context, options considered, decision, consequences. Newest last.
   WebSocket headers, so these services must never be exposed to browsers directly; the agent is
   the only intended client. Sentence splitting rescans a buffer of at most a few hundred
   characters per message, which is bounded and was judged not worth an incremental scanner.
+
+## ADR-0020: Agent worker design
+
+- **Context:** LiveKit Agents 1.8.13 (verified by reading the installed package) offers custom
+  STT and TTS plugins, `turn_handling` options and per-message metrics. Its turn-detector
+  model lists 14 languages without Malagasy. The brief asks for barge-in within 300 ms and
+  end-of-speech to first-audio latency.
+- **Decision:**
+  - STT is a non-streaming plugin calling `POST /transcribe`. `AgentSession` wraps non-streaming
+    STT with VAD, so each utterance is sent once the user stops. A streaming plugin over
+    `WS /stream` is a later optimization if the benchmark needs it.
+  - TTS is a non-streaming plugin calling `POST /synthesize/stream`; LiveKit splits the reply
+    into sentences and calls it per sentence, so speech starts after the first sentence.
+  - `turn_detection="vad"` with endpointing 0.4 to 2.0 s, instead of the unsupported turn
+    detector. Interruption mode is `vad` with a 0.2 s minimum duration, leaving about 100 ms
+    for the rest of the 300 ms budget. Both are settings, to be tuned with real audio.
+  - Latency comes from LiveKit's `ChatMessage.metrics["e2e_latency"]` (user finished speaking
+    to agent began responding), published on data topic `babakoto.latency`. The deprecated
+    session-level `metrics_collected` event is not used.
+  - `STT_PROVIDER` is dropped from the agent for now: the engine is chosen in the STT service.
+    Gladia returns as a provider with the CPU compose profile.
+  - The LLM model defaults to each plugin's own default when `LLM_MODEL` is blank, so no model
+    id is hard-coded here.
+  - The Malagasy system prompt and greeting were written by a non-native assistant and are
+    registered for native review.
+- **Consequences:** Latency is bounded below by VAD silence (0.3 s) plus endpointing (0.4 s)
+  plus a full STT call, which may make the 1.5 s p50 target hard; the benchmark will say.
+  Nothing has run against real models, a LiveKit server or a browser yet, and the 300 ms
+  barge-in claim is unmeasured.
