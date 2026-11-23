@@ -82,3 +82,26 @@ Format: context, options considered, decision, consequences. Newest last.
   `pnpm-workspace.yaml`.
 - **Consequences:** New dependencies with install scripts fail the install until reviewed and
   added explicitly, which limits supply-chain exposure.
+
+## ADR-0010: release-please for semantic versioning
+
+- **Context:** The brief asks for a release workflow using semantic versioning and
+  Conventional Commits. Commits follow `type: message` with no scope.
+- **Options:** semantic-release (npm-based, publishes on every push); release-please (opens a
+  release PR from commit history).
+- **Decision:** `googleapis/release-please-action`, manifest mode, starting at `0.0.0`, with
+  `bump-minor-pre-major` so `feat` bumps the minor version until 1.0.
+- **Consequences:** Merging the release PR tags the version and updates `CHANGELOG.md`.
+  Squash-merge titles must stay Conventional Commits or they are ignored. The repository
+  setting "Allow GitHub Actions to create pull requests" must be on.
+
+## ADR-0011: CI design and action pinning
+
+- **Context:** CI must lint, type-check, test, build Docker and scan for secrets on every PR.
+- **Decision:** One workflow with parallel jobs (python, web, docker, secrets) plus a separate
+  CodeQL workflow. Python coverage fails below 80%. Actions are pinned to the newest exact or
+  major tag that exists upstream (for example `setup-uv@v10.4.0`, which has no floating major
+  tag). Dependabot covers uv, npm, GitHub Actions and the API Dockerfile.
+- **Consequences:** Pinning to tags, not commit SHAs, trades some supply-chain safety for
+  readability; revisit before v0.1.0 in Milestone 4. Playwright e2e is not in CI until the
+  first page exists (see ADR-0005).
