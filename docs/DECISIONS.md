@@ -141,3 +141,48 @@ Format: context, options considered, decision, consequences. Newest last.
   depends on a disputed form is marked `# NEEDS_REVIEW` and registered in
   `docs/NEEDS_NATIVE_REVIEW.md`. Expect changes after review, so tests double as the review
   checklist.
+
+## ADR-0014: STT service uses Transformers, not CTranslate2
+
+- **Context:** The brief prefers CTranslate2 / faster-whisper "if conversion works". The
+  SunflowerASR model card (read 2026-11-23) ships only `model.safetensors` and tokenizer files,
+  no CTranslate2 files, and its documented inference path is `WhisperForConditionalGeneration`.
+  Malagasy is selected by forcing a custom language token id (`mlg` = 50349), not Whisper's
+  `language=` argument.
+- **Options:** convert to CTranslate2 now; Transformers fp16 now and convert later.
+- **Decision:** Transformers fp16 on GPU first, following the card (`forced_decoder_ids`,
+  `num_beams=1`, `max_new_tokens=444`). CTranslate2 conversion is a later optimization, taken
+  only if the latency benchmark misses the p50 target and the converted model matches WER.
+- **Consequences:** Higher latency than CTranslate2 is possible. The token id is a setting
+  (`SUNFLOWER_LANGUAGE_TOKEN_ID`), so a model revision with different ids can be handled
+  without code changes. Not yet run against real weights.
+
+## ADR-0015: SunflowerASR is gated; revision must be pinned by the operator
+
+- **Context:** The repo is gated: files need a logged-in account that accepted the terms, so a
+  `HF_TOKEN` is required. The card page shows several commits; the page does not label which
+  is HEAD, and we could not verify any hash without a token.
+- **Decision:** `SUNFLOWER_MODEL_REVISION` is required and the service refuses to start
+  without it (`STT_ENGINE=fake` is the only exception). No hash is hard-coded until it is
+  verified with an authenticated clone. Candidate commit from the card's file list (unverified):
+  `6d6ed2132e353327c890543b7e6d570a0132c1ea` (weights, "GRPO step-216 checkpoint").
+- **Consequences:** First real run needs the human to supply `HF_TOKEN`, accept the terms and
+  confirm the revision. The license (Apache-2.0 per the card) stays REPORTED until verified.
+
+## ADR-0016: GPU runs on Molab notebooks, so core logic must run in-process
+
+- **Context:** The owner chose Molab (molab.marimo.io) as the GPU environment. Its docs
+  (read 2026-11-23) state an optional NVIDIA RTX Pro 6000 Blackwell (96 GB VRAM), 4 CPUs and
+  32 GB RAM, 12-hour sessions, 90-minute idle shutdown and limited persistent storage. They do
+  not state shell access, Docker, background servers, open ports, secrets handling or general
+  internet access.
+- **Options:** require Docker everywhere; keep Docker for production and make model code
+  importable so a notebook can run it without Docker.
+- **Decision:** Keep Docker Compose as the documented deployment, but build every service as
+  an importable library plus a thin FastAPI wrapper. Molab runs the STT/TTS engines and the
+  latency benchmark in-process from a marimo notebook (`eval/notebooks/`).
+- **Consequences:** The full WebRTC conversation (browser to LiveKit to agent) may not be
+  possible on Molab if it cannot expose ports. Acceptance runs that need it (5-turn browser
+  conversation, interruption) may need a different host; the latency benchmark can run on
+  Molab. Re-check the unknowns (shell, ports, secrets) before relying on it. Latency numbers
+  must name the GPU used.
