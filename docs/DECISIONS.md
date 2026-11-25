@@ -319,8 +319,8 @@ Format: context, options considered, decision, consequences. Newest last.
     the clear error when LiveKit is not configured; a conversation e2e needs the compose stack.
   - CI gets an `e2e` job (build, install Chromium, run Playwright), as ADR-0005 planned.
     `PLAYWRIGHT_CHROME_PATH` lets machines where the bundled browser cannot run use system Chrome.
-- **Consequences:** The `e2e` check should be added to branch protection once it has passed on
-  main. ESLint now includes the React hooks rules.
+- **Consequences:** `Web end-to-end` became a required check after it passed on main. ESLint
+  now includes the React hooks rules.
 
 ## ADR-0023: Token endpoint abuse guards
 

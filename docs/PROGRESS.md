@@ -2,7 +2,7 @@
 
 ## Milestone 0: repo foundations
 
-Status: complete on 2026-11-23, pending a final review of the checklist below.
+Status: complete on 2026-11-23.
 
 ### What was built
 
@@ -37,8 +37,41 @@ treated as non-commercial.
 - release-please needs Actions allowed to create PRs; the setting was enabled via API but the
   first release PR has not run yet.
 
-### Needed from the human
+## Milestone 1: talking MVP
 
-- Confirm Milestone 1 can start.
-- For Milestone 1: `HF_TOKEN`, an LLM API key, LiveKit keys, a Gladia key (optional), GPU
-  access, and a reference voice clip with its transcript.
+Status: implementation complete. Live acceptance awaits credentials, consented audio and GPU
+runs. [Tracking issue #15](https://github.com/colombefioren/BABAKOTO/issues/15)
+
+### What shipped
+
+- Malagasy text normalization, Sunflower STT, opt-in OmniVoice and MMS TTS, and the LiveKit
+  worker with Silero VAD, configurable interruption and per-reply latency events.
+- A browser playground with a microphone control, live captions and per-turn latency. The
+  README includes the three-command quickstart and a demo GIF placeholder.
+- Loopback-only Compose profiles. GPU runs the Sunflower service and reserves NVIDIA devices
+  for STT and TTS. CPU uses the Gladia streaming plugin and fake TTS. Sunflower remains the
+  default standalone STT provider.
+- Scripted latency benchmark and an in-process Molab GPU notebook. See [evaluation](../eval/README.md).
+
+### Verified
+
+- `just dev` generated an ignored, mode-0600 `.env` in a clean checkout and preserved it on
+  rerun. `docker compose config --quiet` passed for both profiles.
+- `just check` passed with 427 Python tests and 25 web unit tests. The API image and the CPU
+  profile's agent, TTS and web images built.
+- The web production build and 2 Playwright smoke tests passed in system Chrome. The browser
+  checks covered rendering and the missing-LiveKit configuration error. The GitHub
+  `Web end-to-end` check is required on `main`.
+
+### Acceptance pending
+
+- The five-turn Malagasy conversation has yet to run against a live LiveKit server in a
+  browser. No live cloud provider call, GPU inference or real STT/TTS model run was performed.
+  The Molab notebook has yet to run on Molab.
+- The p50 ≤ 1.5 s and p95 ≤ 2.5 s latency targets and the 300 ms barge-in target remain
+  unmeasured. There are no measured latency or WER results to report.
+- Licenses remain REPORTED or UNVERIFIED, with non-commercial restrictions applied where
+  documented. None are VERIFIED. [License register](../THIRD_PARTY_LICENSES.md)
+- Owner inputs and native review are tracked in
+  [issue #23](https://github.com/colombefioren/BABAKOTO/issues/23). Milestone 2 awaits the
+  owner's go-ahead.
