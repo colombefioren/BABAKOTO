@@ -589,3 +589,13 @@ Format: context, options considered, decision, consequences. Newest last.
   Only the default branch can invoke the deployment job.
 - **Consequences** Both languages share one navigation and release cadence.
   The guide can build locally without credentials or a running stack.
+
+## ADR-0043: Stage v0.1.0 as a source prerelease
+
+- **Context** Release Please proposed 1.0.0 for an untagged repository. The first
+  preview is v0.1.0 and its live acceptance still depends on external inputs.
+- **Decision** Set the initial version explicitly, use the root `v0.1.0` tag and
+  stage the release pull request and GitHub prerelease as drafts. Use the
+  [release checklist](RELEASING.md) before publication.
+- **Consequences** Release metadata can be reviewed while acceptance is open.
+  The release packages source only. Weights and recordings remain operator assets.
