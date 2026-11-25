@@ -487,3 +487,17 @@ Format: context, options considered, decision, consequences. Newest last.
   stays in PostgreSQL. Validation responses contain field errors only.
   Retrieval and its index can evolve independently of document storage. Rolling back the
   application can leave the additive table in place.
+
+## ADR-0034: Retrieve agent knowledge with PostgreSQL full-text search
+
+- **Context** Saved agents need to use private source documents during calls. The local
+  stack already runs PostgreSQL and can operate without an embedding service.
+- **Decision** Index titles and text with PostgreSQL's simple dictionary. Search bounded
+  terms from the completed utterance for the selected agent and return at most three
+  bounded excerpts. Use a POST body with the worker's existing read credential. Inject
+  excerpts as reference data for the current turn and instruct the model to ignore
+  embedded instructions. Calls continue if the search is unavailable.
+- **Consequences** The search adds no external provider or separate index service.
+  The API keeps no search history. Retrieved excerpts enter the configured LLM context
+  for the turn. Exact lexical matching can miss inflections, synonyms, or recognition
+  errors. Retrieval quality and call latency still need the live acceptance run.

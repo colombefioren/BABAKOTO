@@ -9,6 +9,7 @@ from babakoto_api.knowledge import (
     DocumentInput,
     DocumentSummary,
     KnowledgeDocument,
+    KnowledgeExcerpt,
 )
 from babakoto_api.main import create_app
 from babakoto_api.settings import Settings
@@ -29,6 +30,13 @@ class MemoryKnowledge:
             FIRST_AGENT: {},
             SECOND_AGENT: {},
         }
+
+    def search(self, agent_id: UUID, query: str) -> list[KnowledgeExcerpt]:
+        return [
+            KnowledgeExcerpt(id=doc.id, title=doc.title, excerpt=doc.text)
+            for doc in self.documents.get(agent_id, {}).values()
+            if query in doc.text
+        ]
 
     def ready(self) -> None:
         return None
@@ -122,6 +130,7 @@ def test_documents_require_the_operator_and_reject_unsafe_bodies(client: TestCli
     assert (
         client.put(item, headers=AUTH, json={"title": "Title", "text": "\x00"}).status_code == 422
     )
+
     oversized = "synthetic private content".ljust(MAX_TEXT_LENGTH + 1, "a")
     response = client.put(item, headers=AUTH, json={"title": "Title", "text": oversized})
     assert response.status_code == 422
@@ -134,3 +143,25 @@ def test_documents_require_the_operator_and_reject_unsafe_bodies(client: TestCli
         ).status_code
         == 404
     )
+
+
+def test_runtime_search_requires_worker_key_and_scopes_results(client: TestClient) -> None:
+    for agent_id, day in [(FIRST_AGENT, "Sunday"), (SECOND_AGENT, "Saturday")]:
+        response = client.put(
+            url(agent_id, FIRST_DOC),
+            headers=AUTH,
+            json={"title": "Hours", "text": f"Office opens on {day}."},
+        )
+        assert response.status_code == 200
+    endpoint = "/internal/knowledge-search"
+    body = {"agent_id": str(FIRST_AGENT), "query": "Office"}
+    worker = {"Authorization": f"Bearer {WORKER}"}
+    assert client.post(endpoint, json=body).status_code == 401
+    assert client.post(endpoint, headers=AUTH, json=body).status_code == 401
+    result = client.post(endpoint, headers=worker, json=body)
+    assert result.status_code == 200
+    assert result.headers["cache-control"] == "no-store"
+    assert result.json() == {
+        "items": [{"id": str(FIRST_DOC), "title": "Hours", "excerpt": "Office opens on Sunday."}],
+    }
+    assert client.post(endpoint, headers=worker, json={**body, "query": " "}).status_code == 422

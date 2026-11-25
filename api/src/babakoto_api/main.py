@@ -4,13 +4,18 @@ import hmac
 from uuid import UUID
 
 import psycopg
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from babakoto_api import __version__
 from babakoto_api.agents import AgentRepository, RuntimeProfile, agent_router
-from babakoto_api.knowledge import KnowledgeRepository, knowledge_router
+from babakoto_api.knowledge import (
+    KnowledgeQuery,
+    KnowledgeRepository,
+    KnowledgeResult,
+    knowledge_router,
+)
 from babakoto_api.knowledge_store import PostgresKnowledgeRepository
 from babakoto_api.postgres import PostgresAgentRepository
 from babakoto_api.settings import Settings, get_settings
@@ -18,6 +23,7 @@ from babakoto_common.auth import DEFAULT_EXEMPT_PATHS, BearerAuthMiddleware
 from babakoto_common.limits import BodySizeLimitMiddleware
 
 RUNTIME_PROFILE_PATH = "/internal/agent-profile"
+RUNTIME_SEARCH_PATH = "/internal/knowledge-search"
 
 
 def create_app(
@@ -40,7 +46,7 @@ def create_app(
         app.add_middleware(
             BearerAuthMiddleware,
             token=secret,
-            exempt_paths=DEFAULT_EXEMPT_PATHS | {RUNTIME_PROFILE_PATH},
+            exempt_paths=DEFAULT_EXEMPT_PATHS | {RUNTIME_PROFILE_PATH, RUNTIME_SEARCH_PATH},
         )
 
     def repository() -> AgentRepository:
@@ -76,8 +82,7 @@ def create_app(
             documents.ready()
         return {"status": "ready"}
 
-    @app.get(RUNTIME_PROFILE_PATH)
-    def runtime_profile(agent_id: UUID, request: Request) -> RuntimeProfile:
+    def require_runtime_token(request: Request) -> None:
         if not runtime_key:
             raise HTTPException(status_code=503, detail="agent runtime access is not configured")
         authorization = request.headers.get("authorization", "").encode()
@@ -87,12 +92,24 @@ def create_app(
                 detail="missing or invalid bearer token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
+    @app.get(RUNTIME_PROFILE_PATH)
+    def runtime_profile(agent_id: UUID, request: Request) -> RuntimeProfile:
+        require_runtime_token(request)
         agent = repository().get(agent_id)
         if agent is None:
             raise HTTPException(status_code=404, detail="agent not found")
         return RuntimeProfile(
             id=agent.id, system_prompt=agent.system_prompt, first_message=agent.first_message
         )
+
+    @app.post(RUNTIME_SEARCH_PATH)
+    def runtime_search(
+        body: KnowledgeQuery, request: Request, response: Response
+    ) -> KnowledgeResult:
+        require_runtime_token(request)
+        response.headers["Cache-Control"] = "no-store"
+        return KnowledgeResult(items=knowledge_repository().search(body.agent_id, body.query))
 
     app.include_router(agent_router(repository))
     app.include_router(knowledge_router(knowledge_repository))

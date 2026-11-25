@@ -39,7 +39,24 @@ class DocumentPage(BaseModel):
     next_after: UUID | None
 
 
+class KnowledgeQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    agent_id: UUID
+    query: str = Field(min_length=1, max_length=1000)
+
+
+class KnowledgeExcerpt(DocumentSummary):
+    excerpt: str
+
+
+class KnowledgeResult(BaseModel):
+    items: list[KnowledgeExcerpt]
+
+
 class KnowledgeRepository(Protocol):
+    def search(self, agent_id: UUID, query: str) -> list[KnowledgeExcerpt]: ...
+
     def ready(self) -> None: ...
 
     def list(

@@ -32,6 +32,13 @@ MIGRATIONS = (
         )
         """,
     ),
+    (
+        3,
+        """
+        CREATE INDEX babakoto_documents_search_idx ON babakoto_documents
+        USING GIN (to_tsvector('simple', title || ' ' || text))
+        """,
+    ),
 )
 
 
