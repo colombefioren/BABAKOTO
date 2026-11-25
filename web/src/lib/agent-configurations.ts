@@ -1,4 +1,5 @@
 import 'server-only';
+import { requestConfiguration } from './configuration-api';
 
 export interface AgentFields {
   name: string;
@@ -34,27 +35,10 @@ function isAgent(value: unknown): value is AgentConfiguration {
   );
 }
 
-async function request(path: string, body?: AgentFields): Promise<Response> {
-  const baseUrl = process.env.API_URL;
-  const token = process.env.API_SECRET_KEY;
-  if (!baseUrl || !token) throw new Error('Agent configuration API is unavailable');
-
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
-  if (body) headers['Content-Type'] = 'application/json';
-  return fetch(new URL(path, baseUrl), {
-    cache: 'no-store',
-    redirect: 'error',
-    signal: AbortSignal.timeout(5000),
-    headers,
-    method: body ? 'PUT' : 'GET',
-    body: body ? JSON.stringify(body) : undefined,
-  });
-}
-
 export async function listAgents(after: string | undefined): Promise<AgentPage> {
   const query = new URLSearchParams();
   if (after) query.set('after', after);
-  const response = await request(`/v1/agents?${query}`);
+  const response = await requestConfiguration(`/v1/agents?${query}`);
   if (!response.ok) throw new Error('Agent configuration API is unavailable');
   const data: unknown = await response.json();
   if (
@@ -72,7 +56,7 @@ export async function listAgents(after: string | undefined): Promise<AgentPage> 
 }
 
 export async function getAgent(id: string): Promise<AgentConfiguration | null> {
-  const response = await request(`/v1/agents/${encodeURIComponent(id)}`);
+  const response = await requestConfiguration(`/v1/agents/${encodeURIComponent(id)}`);
   if (response.status === 404) return null;
   if (!response.ok) throw new Error('Agent configuration API is unavailable');
   const item: unknown = await response.json();
@@ -83,6 +67,10 @@ export async function getAgent(id: string): Promise<AgentConfiguration | null> {
 }
 
 export async function putAgent(id: string, fields: AgentFields): Promise<boolean> {
-  const response = await request(`/v1/agents/${encodeURIComponent(id)}`, fields);
+  const response = await requestConfiguration(
+    `/v1/agents/${encodeURIComponent(id)}`,
+    'PUT',
+    fields,
+  );
   return response.ok;
 }

@@ -501,3 +501,12 @@ Format: context, options considered, decision, consequences. Newest last.
   The API keeps no search history. Retrieved excerpts enter the configured LLM context
   for the turn. Exact lexical matching can miss inflections, synonyms, or recognition
   errors. Retrieval quality and call latency still need the live acceptance run.
+
+## ADR-0035: Manage knowledge from the saved-agent dashboard
+
+- **Context** Operators need to edit the source text retrieved by saved agents.
+- **Decision** Give each saved agent an authenticated knowledge page with paginated
+  titles and a plain-text editor. Reuse the dashboard's server-side bearer connection,
+  check origin on mutations, and ask for confirmation before removing a document.
+- **Consequences** The browser receives source text only when the operator opens a
+  document. The editor does not download or render remote content.

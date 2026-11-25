@@ -93,6 +93,12 @@
   cursor: pointer;
 }
 
+.agent-fields .secondary {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--line);
+}
+
 .agent-fields button:disabled {
   opacity: 0.65;
   cursor: progress;

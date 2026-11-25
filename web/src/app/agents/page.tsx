@@ -89,7 +89,12 @@ export default async function AgentsPage({
           </aside>
           <section className="agent-panel" aria-labelledby="agent-editor-title">
             <h2 id="agent-editor-title">{data.agent ? 'Edit agent' : 'New agent'}</h2>
-            {data.agent && <Link href={`/?agent=${data.agent.id}`}>Open in playground</Link>}
+            {data.agent && (
+              <nav className="agent-pages" aria-label="Agent actions">
+                <Link href={`/?agent=${data.agent.id}`}>Open in playground</Link>
+                <Link href={`/agents/${data.agent.id}/knowledge`}>Manage knowledge</Link>
+              </nav>
+            )}
             <AgentEditor
               key={formAgent.id}
               agent={formAgent}
