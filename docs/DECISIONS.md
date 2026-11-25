@@ -510,3 +510,14 @@ Format: context, options considered, decision, consequences. Newest last.
   check origin on mutations, and ask for confirmation before removing a document.
 - **Consequences** The browser receives source text only when the operator opens a
   document. The editor does not download or render remote content.
+
+## ADR-0036: Bound function tools to the current saved agent
+
+- **Context** Whole-utterance retrieval can miss a useful source when a caller includes
+  unrelated words or follows up on a previous turn.
+- **Decision** Expose a read-only `search_agent_knowledge` function to saved-agent calls.
+  Validate one short query and reuse the same bounded search. The worker binds the agent
+  ID from the loaded profile. Limit tool execution to one round per reply.
+- **Consequences** A model can refine the search without credentials, a destination URL,
+  or another agent's ID in its tool arguments. Tool results remain in the session's
+  in-memory chat history. Unconfigured playground calls expose no tools.
