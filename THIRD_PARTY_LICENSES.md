@@ -42,3 +42,11 @@ used to evaluate it. WAXAL and `malagasy-asr-100h-split` overlap and must be ded
 | Gladia API                | Optional cloud STT                 | Commercial terms; read before using outputs for training | UNVERIFIED |
 
 Python and JavaScript package dependencies are tracked by `uv.lock` and `pnpm-lock.yaml`.
+
+## Local TTS training tool
+
+Piper 1.8.0 is a separately installed GPL-3.0 training tool (REPORTED). Babakoto
+does not ship Piper code, pretrained voices, or corpora. The trained voice's
+permissions depend on the speaker agreement and applicable training data rights.
+Review those permissions before any use outside the agreement.
+[Upstream training project](https://github.com/OHF-Voice/piper1-gpl/tree/v1.8.0)

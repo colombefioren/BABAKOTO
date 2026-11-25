@@ -25,7 +25,7 @@ class Clip(BaseModel):
     text: str = Field(min_length=1, max_length=1500)
 
 
-def _read_pcm(root: Path, relative: str) -> bytes:
+def read_pcm(root: Path, relative: str) -> bytes:
     audio = (root / relative).resolve()
     if Path(relative).is_absolute() or not audio.is_relative_to(root) or not audio.is_file():
         raise ValueError("each audio path must resolve to a regular file inside the corpus")
@@ -61,7 +61,7 @@ def prepare(root: Path, clips: Sequence[Clip], signed_consent: Path, out: Path) 
             rows = csv.writer(metadata, delimiter="|")
             for index, clip in enumerate(clips, start=1):
                 try:
-                    pcm = _read_pcm(root, clip.audio)
+                    pcm = read_pcm(root, clip.audio)
                 except (ValueError, OSError, EOFError, wave.Error) as exc:
                     raise ValueError(f"clip {index} has invalid audio: {exc}") from exc
                 digest = hashlib.sha256(pcm).hexdigest()

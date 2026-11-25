@@ -544,3 +544,16 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** The agreement stays outside the corpus. The operator verifies its
   scope and recording rights. Grapheme quality, dialect and pronunciation remain
   subject to native listening, and there is no approved voice corpus in the repo.
+
+## ADR-0039: Train a local VITS voice without inherited voice weights
+
+- **Context** Non-commercial model weights are unsuitable for a production-default
+  voice. Training must run inside an operator-controlled Python environment.
+- **Decision** Invoke the separately installed Piper 1.8.0 trainer with the prepared
+  grapheme corpus. Train from scratch, disable optional model downloads and audio
+  logging, and export the selected checkpoint to ONNX. Verify the input receipt and
+  publish the graph, config and artifact digests together.
+- **Consequences** No upstream voice or dataset license is inherited from a warm start.
+  Piper's GPL tool remains separate, and the speaker agreement determines permissible
+  use. The trainer needs its compiled alignment extension and a compatible GPU
+  environment. The resulting voice still requires native listening review.
