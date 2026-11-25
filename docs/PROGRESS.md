@@ -29,7 +29,7 @@ All third-party assets are marked REPORTED, UNVERIFIED or NC in
 [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md). Nothing is VERIFIED yet. OmniVoice is
 treated as non-commercial.
 
-### Known problems and risks
+### Known problems and risks at Milestone 0 completion
 
 - Starlette warns that `httpx` in `TestClient` is deprecated; watch for it becoming an error.
 - Actions are pinned by tag, not SHA (ADR-0011).
@@ -66,7 +66,12 @@ runs. [Tracking issue #15](https://github.com/colombefioren/BABAKOTO/issues/15)
 ### Acceptance pending
 
 - The five-turn Malagasy conversation has yet to run against a live LiveKit server in a
-  browser. No live cloud provider call, GPU inference or real STT/TTS model run was performed.
+  browser with real speech and configured providers. Local smoke tests exercised the
+  browser and LiveKit room creation and admission with fixture credentials. A separate
+  WebRTC smoke call with synthetic microphone audio and local provider fakes verified
+  captions, the saved greeting, knowledge-based reply, audio track and latency event.
+  No live cloud
+  provider call, GPU inference or run with a speech-trained STT or TTS model was performed.
   The Molab notebook has yet to run on Molab.
 - The p50 ≤ 1.5 s and p95 ≤ 2.5 s latency targets and the 300 ms barge-in target remain
   unmeasured. There are no measured latency or WER results to report.
@@ -84,3 +89,48 @@ Checks use synthetic PCM and fake model runtimes. They verify source and split r
 manifest integrity, checkpoint export wiring and the aggregate WER computation.
 No approved speech, real training run or GPU-derived WER is available. Model and dataset
 licenses remain REPORTED or UNVERIFIED. [Acceptance inputs](https://github.com/colombefioren/BABAKOTO/issues/34)
+
+## Milestone 3: operator dashboard and local voice
+
+Status: implementation on `main`. Acceptance awaits a consented native voice and
+a real call using the dashboard configuration.
+
+### What shipped
+
+- The loopback playground requires operator authentication and enforces a
+  concurrent-room cap. PostgreSQL stores saved agents and their plain-text
+  knowledge. The dashboard edits prompts, greetings and documents.
+- The worker loads the selected configuration at the start of a call, retrieves
+  relevant excerpts for each completed turn and exposes a read-only tool for
+  follow-up searches. The PostgreSQL search and tool are scoped to the saved agent.
+- The local TTS pipeline prepares a private consented corpus and trains a
+  grapheme-based VITS voice with Piper. The speech service can load its ONNX export
+  in both Compose profiles. The test tone is still the default.
+- The bundled application does not persist call audio or transcripts. The
+  language model may receive excerpts and call text according to its retention
+  settings.
+
+### Verified
+
+- A real PostgreSQL Compose test exercised migration, search and data isolation.
+  A Chrome test created, saved, edited, reloaded and deleted knowledge documents
+  against the production-built dashboard.
+- A CPU run trained on synthetic tones and exported a VITS graph. The CPU TTS
+  container loaded it and returned mono WAV and streaming PCM. This exercised
+  the training and serving path with no human voice or real speech corpus.
+- Model-backed call quality and native pronunciation remain unmeasured.
+  [Consented voice and GPU acceptance](https://github.com/colombefioren/BABAKOTO/issues/44)
+
+## Milestone 4: documentation and first source preview
+
+- The English and French guides are published through GitHub Pages. The strict
+  documentation build and both public languages were checked.
+  [English](https://colombefioren.github.io/BABAKOTO/)
+  · [Français](https://colombefioren.github.io/BABAKOTO/fr/)
+- Repository workflow actions use immutable commit references. Release Please
+  proposes the first source preview as `v0.1.0` in a draft pull request.
+  [Release draft](https://github.com/colombefioren/BABAKOTO/pull/25)
+- Publication awaits the live-call, held-out ASR and native voice acceptance
+  above, plus pinned-revision license verification. No release assets have been
+  published. [Release checklist](RELEASING.md)
+  · [Tracking issue #45](https://github.com/colombefioren/BABAKOTO/issues/45)

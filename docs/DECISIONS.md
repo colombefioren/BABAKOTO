@@ -421,6 +421,12 @@ Format: context, options considered, decision, consequences. Newest last.
   operator settings. The shared password suits one self-hosted playground. Deployments beyond
   loopback need TLS protection for the credential and the edge controls from ADR-0023.
 
+- **CodeQL follow-up** The SHA-256 digests are temporary fixed-length values for the
+  constant-time equality check. There is no password hash store or persisted digest.
+  `just dev` generates a random operator credential and the comparison runs on the
+  server. The password-storage finding does not apply to this check.
+  [CodeQL alert #1](https://github.com/colombefioren/BABAKOTO/security/code-scanning/1)
+
 ## ADR-0029: Admit playground rooms through one issuer
 
 - **Context** The request rate limit controls token issuance over time. Room occupancy

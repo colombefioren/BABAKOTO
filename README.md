@@ -6,8 +6,10 @@ Think "ElevenLabs Agents, but for Malagasy, and open source": a user talks (brow
 embedded widget), Babakoto listens (speech-to-text), thinks (LLM with tools and a knowledge
 base) and answers out loud (text-to-speech), with natural turn-taking and interruptions.
 
-> **Status: pre-alpha.** The Milestone 1 voice pipeline and Milestone 2 ASR tooling are implemented. Live-call acceptance
-> and latency measurements are pending. See [project progress](docs/PROGRESS.md).
+> **Status: pre-alpha.** The voice pipeline, local ASR tooling, agent dashboard,
+> knowledge retrieval and local TTS tooling are implemented. Live calls with real
+> models, held-out ASR measurement and native voice review are pending.
+> See [project progress](docs/PROGRESS.md).
 
 Babakoto is named after the indri, the lemur of Madagascar known for its song.
 
@@ -23,7 +25,7 @@ caller (browser / phone / widget)
  agent worker (LiveKit Agents, Python)
    VAD (Silero) -> STT -> LLM (+tools, +RAG) -> TTS
         |                              |
-   stt / tts services (GPU)       api (FastAPI + Postgres/pgvector)
+   stt / tts services (GPU)       api (FastAPI + PostgreSQL)
                                        ^
                                   web (Next.js dashboard, playground, widget)
 ```
@@ -36,16 +38,16 @@ Providers are chosen by config, not code:
 
 ## Repository layout
 
-| Path                           | Purpose                                               |
-| ------------------------------ | ----------------------------------------------------- |
-| `agent/`                       | LiveKit Agents worker                                 |
-| `services/stt`, `services/tts` | Model-serving FastAPI services                        |
-| `api/`                         | Backend: agents, knowledge base, tools, conversations |
-| `web/`                         | Dashboard, playground, embeddable widget              |
-| `training/`                    | ASR and TTS data pipelines and fine-tuning            |
-| `eval/`                        | WER and latency benchmarks                            |
-| `packages/malagasy-text/`      | Malagasy text normalization for TTS                   |
-| `infra/`                       | Docker Compose, Dockerfiles, deploy docs              |
+| Path                           | Purpose                                       |
+| ------------------------------ | --------------------------------------------- |
+| `agent/`                       | LiveKit Agents worker                         |
+| `services/stt`, `services/tts` | Model-serving FastAPI services                |
+| `api/`                         | Private agent and knowledge configuration API |
+| `web/`                         | Operator dashboard and browser playground     |
+| `training/`                    | ASR and TTS data pipelines and fine-tuning    |
+| `eval/`                        | WER and latency benchmarks                    |
+| `packages/malagasy-text/`      | Malagasy text normalization for TTS           |
+| `infra/`                       | Docker Compose, Dockerfiles, deploy docs      |
 
 ## Quickstart
 
@@ -85,8 +87,9 @@ Use `just down` before switching profiles. Use `just check` for local lint, type
 Code is Apache-2.0. Models and datasets keep their own licenses; see
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). Non-commercial assets (such as
 `facebook/mms-tts-mlg`) are dev-only, off by default, and never bundled. Babakoto never
-trains on user conversations without explicit opt-in, and redacts phone numbers and emails
-from stored transcripts by default.
+trains on user conversations without explicit opt-in. The bundled application keeps
+call audio and captions in memory. PostgreSQL stores operator-created settings and
+knowledge documents. Cloud STT and LLM services apply their own retention settings.
 
 ## Contributing
 
