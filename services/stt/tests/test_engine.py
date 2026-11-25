@@ -128,6 +128,7 @@ def test_sunflower_loads_pinned_revision_and_forces_malagasy(
     result = engine.transcribe(np.zeros(16000, dtype=np.float32))
     assert result.text == "manao ahoana"
     assert calls["model"][1]["revision"] == "rev1"
+    assert calls["model"][1]["torch_dtype"] == "fp32"
     assert calls["processor"][1]["revision"] == "rev1"
     assert calls["generation_config"].forced_decoder_ids == [(1, 50349), (2, 50359), (3, 50363)]
     assert calls["generation_config"].language is None
