@@ -8,6 +8,8 @@ export interface LiveKitConfig {
   apiSecret: string;
 }
 
+export const JOIN_TOKEN_SECONDS = 60;
+
 export class ConfigError extends Error {}
 
 /** Read and validate the LiveKit environment; throws a clear error for missing values. */
@@ -40,7 +42,10 @@ export async function createSession(config: LiveKitConfig): Promise<Session> {
   const suffix = crypto.randomUUID();
   const room = `babakoto-${suffix}`;
   const identity = `visitor-${suffix.slice(0, 8)}`;
-  const token = new AccessToken(config.apiKey, config.apiSecret, { identity, ttl: '10m' });
+  const token = new AccessToken(config.apiKey, config.apiSecret, {
+    identity,
+    ttl: JOIN_TOKEN_SECONDS,
+  });
   // Least privilege: microphone only, no data messages (the agent publishes those, not the visitor).
   token.addGrant({
     roomJoin: true,

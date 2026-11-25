@@ -56,6 +56,7 @@ def _publish_latency(ctx: JobContext, session: AgentSession[None]) -> None:
 async def entrypoint(ctx: JobContext) -> None:
     settings = AgentSettings()
     logging.getLogger().setLevel(settings.log_level)
+    await ctx.wait_for_participant()
     session = build_session(settings, vad=ctx.proc.userdata.get("vad"))
     _publish_latency(ctx, session)
     await session.start(agent=BabakotoAgent(settings), room=ctx.room)

@@ -6,3 +6,5 @@ rtc:
   # Host browser uses published loopback ports. The agent uses the bridge candidate.
   node_ip: 127.0.0.1
   advertise_internal_ip: true
+room:
+  auto_create: false

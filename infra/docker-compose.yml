@@ -70,6 +70,8 @@ services:
       LIVEKIT_URL: ${LIVEKIT_URL:-ws://localhost:7880}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Run just dev to create a local LiveKit key}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Run just dev to create a local LiveKit secret}
+      LIVEKIT_ROOM_SERVICE_URL: http://livekit:7880
+      WEB_MAX_PLAYGROUND_ROOMS: ${WEB_MAX_PLAYGROUND_ROOMS:-4}
       WEB_PLAYGROUND_PASSWORD: ${WEB_PLAYGROUND_PASSWORD:-}
       WEB_TRUSTED_PROXY_HOPS: ${WEB_TRUSTED_PROXY_HOPS:-0}
     ports:

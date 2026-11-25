@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, createSession, readConfig } from './token';
+import { ConfigError, createSession, JOIN_TOKEN_SECONDS, readConfig } from './token';
 
 const env = {
   LIVEKIT_URL: 'ws://lk:7880',
@@ -45,6 +45,6 @@ describe('createSession', () => {
       canPublishData: false,
       canPublishSources: ['microphone'],
     });
-    expect(payload.exp - payload.nbf).toBeLessThanOrEqual(600);
+    expect(payload.exp - payload.nbf).toBeLessThanOrEqual(JOIN_TOKEN_SECONDS);
   });
 });

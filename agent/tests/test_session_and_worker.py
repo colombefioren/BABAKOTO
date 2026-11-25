@@ -95,3 +95,27 @@ def test_prewarm_loads_vad_into_process_userdata() -> None:
     proc = SimpleNamespace(userdata={})
     worker._prewarm(proc)
     assert proc.userdata["vad"] is not None
+
+
+def test_worker_waits_for_the_caller_before_starting_the_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[str] = []
+
+    async def wait() -> None:
+        events.append("caller joined")
+
+    async def start(**kwargs: object) -> None:
+        events.append("session started")
+
+    def build(*args: object, **kwargs: object) -> SimpleNamespace:
+        events.append("session built")
+        return SimpleNamespace(start=start)
+
+    monkeypatch.setattr(worker, "build_session", build)
+    monkeypatch.setattr(worker, "_publish_latency", lambda *_: None)
+    ctx = SimpleNamespace(
+        proc=SimpleNamespace(userdata={}), room=object(), wait_for_participant=wait
+    )
+    asyncio.run(worker.entrypoint(ctx))  # type: ignore[arg-type]
+    assert events == ["caller joined", "session built", "session started"]

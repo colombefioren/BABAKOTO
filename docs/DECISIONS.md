@@ -420,3 +420,18 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** `just dev` adds the credential to `.env` in existing checkouts and preserves
   operator settings. The shared password suits one self-hosted playground. Deployments beyond
   loopback need TLS protection for the credential and the edge controls from ADR-0023.
+
+## ADR-0029: Admit playground rooms through one issuer
+
+- **Context** The request rate limit controls token issuance over time. Room occupancy
+  needs a separate control so ongoing calls consume a slot.
+- **Decision** The single web issuer serializes check-and-create against LiveKit's room
+  directory and issues the join token only after LiveKit accepts the room. A full or busy
+  issuer returns `429`. Unavailable room service fails closed. Disable automatic room
+  creation in Compose. Each new room admits one caller, with a one-minute initial join
+  token and idle room timeout. The agent waits for a caller before starting its session.
+- **Consequences** Existing rooms count after a web restart. The cap covers admissions
+  through one web instance using a dedicated LiveKit instance. A distributed issuer
+  needs shared admission state. LiveKit tracks a teardown race affecting replayed join
+  credentials, so the issuer limit alone is insufficient as a transport-wide quota.
+  [LiveKit room teardown issue](https://github.com/livekit/livekit/issues/4972)

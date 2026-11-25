@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { clientKey, isSameOrigin, RateLimiter, trustedHopsFromEnv } from '@/lib/guard';
 import { rejectPlaygroundAccess } from '@/lib/playground-auth';
-import { ConfigError, createSession, readConfig } from '@/lib/token';
+import {
+  RoomAdmission,
+  RoomCapacityError,
+  RoomServiceError,
+  roomLimit,
+  roomService,
+} from '@/lib/room-admission';
+import { ConfigError, readConfig } from '@/lib/token';
 
 export const dynamic = 'force-dynamic';
 
 const limiter = new RateLimiter();
+const admission = new RoomAdmission();
 
 /** Mint a short-lived LiveKit token for one browser visitor. */
 export async function POST(request: Request): Promise<NextResponse> {
@@ -18,12 +26,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Too many requests, try again soon' }, { status: 429 });
   }
   try {
-    return NextResponse.json(await createSession(readConfig()), {
+    const config = readConfig();
+    const session = await admission.admit(roomService(config), config, roomLimit());
+    return NextResponse.json(session, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {
-    if (error instanceof ConfigError) {
-      return NextResponse.json({ error: error.message }, { status: 503 });
+    if (error instanceof RoomCapacityError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 429, headers: { 'Retry-After': '5', 'Cache-Control': 'no-store' } },
+      );
+    }
+    if (error instanceof ConfigError || error instanceof RoomServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+      );
     }
     throw error;
   }
