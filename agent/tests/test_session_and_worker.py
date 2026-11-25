@@ -3,6 +3,7 @@ import json
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, Mock
+from uuid import UUID
 
 import pytest
 from livekit.plugins import silero
@@ -10,7 +11,7 @@ from livekit.plugins import silero
 from babakoto_agent import worker
 from babakoto_agent.config import AgentSettings
 from babakoto_agent.latency import TOPIC
-from babakoto_agent.runtime_profile import ProfileUnavailableError
+from babakoto_agent.runtime_profile import ProfileUnavailableError, RuntimeProfile
 from babakoto_agent.session import BabakotoAgent, build_session
 
 TOKEN = "t" * 24
@@ -31,7 +32,8 @@ def test_agent_uses_the_malagasy_prompt() -> None:
     assert agent.instructions.startswith("Ianao dia mpanampy")
 
 
-def test_session_wires_vad_turns_and_interruptions() -> None:
+@pytest.mark.parametrize("use_profile", [False, True])
+def test_session_wires_vad_turns_and_interruptions(use_profile: bool) -> None:
     cfg = AgentSettings(
         _env_file=None,
         endpointing_min_delay_s=0.25,
@@ -40,7 +42,8 @@ def test_session_wires_vad_turns_and_interruptions() -> None:
     )
 
     async def build() -> Any:
-        return build_session(cfg, vad=silero.VAD.load())
+        profile = RuntimeProfile(id=UUID(int=1), system_prompt="Answer.", first_message="")
+        return build_session(cfg, vad=silero.VAD.load(), profile=profile if use_profile else None)
 
     session = asyncio.run(build())
     options = session.options
@@ -48,6 +51,7 @@ def test_session_wires_vad_turns_and_interruptions() -> None:
     assert options.endpointing["max_delay"] == 1.5
     assert options.interruption["min_duration"] == 0.2
     assert options.interruption["enabled"] is True
+    assert options.preemptive_generation["enabled"] is not use_profile
     assert session.stt.provider == "babakoto"
     assert session.tts.sample_rate == 24000
 

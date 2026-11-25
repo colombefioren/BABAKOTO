@@ -64,7 +64,7 @@ async def entrypoint(ctx: JobContext) -> None:
         log.warning("%s", error)
         ctx.shutdown(reason="Saved agent configuration is unavailable")
         return
-    session = build_session(settings, vad=ctx.proc.userdata.get("vad"))
+    session = build_session(settings, vad=ctx.proc.userdata.get("vad"), profile=profile)
     _publish_latency(ctx, session)
     await session.start(agent=BabakotoAgent(settings, profile), room=ctx.room)
 

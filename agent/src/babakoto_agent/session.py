@@ -51,7 +51,9 @@ class BabakotoAgent(Agent):
             )
 
 
-def build_session(settings: AgentSettings, vad: VAD | None = None) -> AgentSession[None]:
+def build_session(
+    settings: AgentSettings, vad: VAD | None = None, *, profile: RuntimeProfile | None = None
+) -> AgentSession[None]:
     """Wire VAD, STT, LLM and TTS with turn-taking tuned for Malagasy.
 
     LiveKit's turn-detector model does not list Malagasy, so turns end on VAD silence
@@ -70,6 +72,8 @@ def build_session(settings: AgentSettings, vad: VAD | None = None) -> AgentSessi
         ),
         turn_handling={
             "turn_detection": "vad",
+            # Saved agents need their knowledge excerpts before the first LLM request.
+            "preemptive_generation": {"enabled": profile is None},
             "endpointing": {
                 "min_delay": settings.endpointing_min_delay_s,
                 "max_delay": settings.endpointing_max_delay_s,

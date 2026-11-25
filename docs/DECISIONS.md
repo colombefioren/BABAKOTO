@@ -605,3 +605,15 @@ Format: context, options considered, decision, consequences. Newest last.
   [release checklist](RELEASING.md) before publication.
 - **Consequences** Release metadata can be reviewed while acceptance is open.
   The release packages source only. Weights and recordings remain operator assets.
+
+## ADR-0044: Complete knowledge retrieval before starting generation
+
+- **Context** A synthetic browser call showed LiveKit starting an LLM request
+  before the saved-agent search completed. The changed turn context invalidated
+  the speculative result and triggered a second provider request.
+- **Decision** Disable preemptive generation in sessions with a saved agent so
+  retrieval can populate the current turn before generation. Default sessions
+  continue to use preemptive generation.
+- **Consequences** Saved-agent calls avoid discarded speculative requests when
+  retrieval returns excerpts. Measure latency with configured providers during
+  acceptance.
