@@ -617,3 +617,14 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** Saved-agent calls avoid discarded speculative requests when
   retrieval returns excerpts. Measure latency with configured providers during
   acceptance.
+
+## ADR-0045: Wait for the LiveKit worker to register during startup
+
+- **Context** In a browser smoke test, the playground opened while the worker
+  was still starting. LiveKit created a room before any worker could accept
+  the job.
+- **Decision** Probe the worker's built-in health endpoint from inside each
+  Compose worker container and use `docker compose up --wait` in `just up`.
+  The endpoint reports ready after the worker registers with LiveKit.
+- **Consequences** The quickstart waits for registration before returning.
+  Setup errors can surface during startup. The health port stays internal.

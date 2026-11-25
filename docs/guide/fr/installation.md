@@ -13,7 +13,8 @@ Après `just dev`, renseignez `GLADIA_API_KEY` et les paramètres du modèle de
 langage dans le fichier local `.env`, puis lancez le profil CPU. Le fichier
 contient aussi les identifiants locaux de LiveKit, des services et de
 l'opérateur. Le profil CPU envoie le son du microphone à Gladia et joue par
-défaut un signal sonore de test.
+défaut un signal sonore de test. La commande attend que le worker s'enregistre
+auprès de LiveKit.
 [Conservation des données chez Gladia](https://eu1.docs.gladia.io/data/retention/)
 
 Sur la machine hôte, ouvrez [localhost:3000](http://localhost:3000). Connectez-vous

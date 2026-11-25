@@ -6,6 +6,18 @@ x-agent: &agent
     dockerfile: agent/Dockerfile
   init: true
   networks: [private, outbound]
+  healthcheck:
+    interval: 5s
+    timeout: 3s
+    retries: 12
+    start_period: 30s
+    test:
+      [
+        CMD,
+        python,
+        -c,
+        "from urllib.request import urlopen; urlopen('http://127.0.0.1:8081/', timeout=2).close()",
+      ]
 
 x-agent-env: &agent-env
   LIVEKIT_URL: ws://livekit:7880

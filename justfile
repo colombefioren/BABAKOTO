@@ -16,7 +16,7 @@ up profile="cpu":
     #!/usr/bin/env sh
     set -eu
     case {{quote(profile)}} in cpu|gpu) ;; *) echo "Use just up cpu or just up gpu" >&2; exit 2 ;; esac
-    docker compose --env-file .env -f infra/docker-compose.yml --profile {{quote(profile)}} up --build -d
+    docker compose --env-file .env -f infra/docker-compose.yml --profile {{quote(profile)}} up --build --wait
 
 # Start the agent dashboard and configuration API
 up-dashboard:

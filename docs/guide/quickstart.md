@@ -12,7 +12,8 @@ just up cpu
 After `just dev`, set `GLADIA_API_KEY` and the LLM provider settings in the ignored
 `.env` before starting the CPU profile. The generated file also holds the local
 LiveKit, service and operator credentials. The CPU profile sends microphone
-audio to Gladia and plays a synthetic test tone by default.
+audio to Gladia and plays a synthetic test tone by default. The startup command
+waits for the worker to register with LiveKit.
 [Gladia data retention](https://eu1.docs.gladia.io/data/retention/)
 
 Open [localhost:3000](http://localhost:3000) on the host. Sign in as `babakoto` with
