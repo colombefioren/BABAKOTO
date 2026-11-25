@@ -11,6 +11,9 @@ base) and answers out loud (text-to-speech), with natural turn-taking and interr
 
 Babakoto is named after the indri, the lemur of Madagascar known for its song.
 
+[English documentation](https://colombefioren.github.io/BABAKOTO/) ·
+[Documentation en français](https://colombefioren.github.io/BABAKOTO/fr/)
+
 ## Architecture and planned integrations
 
 ```

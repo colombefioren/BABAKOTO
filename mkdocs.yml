@@ -1,0 +1,17 @@
+site_name: Babakoto
+site_description: Self-hosted Malagasy voice agents
+site_url: https://colombefioren.github.io/BABAKOTO/
+repo_url: https://github.com/colombefioren/BABAKOTO
+repo_name: colombefioren/BABAKOTO
+edit_uri: edit/main/docs/guide/
+docs_dir: docs/guide
+hooks: [docs/site_hooks.py]
+strict: true
+nav:
+  - Overview: index.md
+  - Quickstart: quickstart.md
+  - Operator guide: operator.md
+  - Français:
+      - Présentation: fr/index.md
+      - Installation: fr/installation.md
+      - Exploitation: fr/exploitation.md

@@ -579,3 +579,13 @@ Format: context, options considered, decision, consequences. Newest last.
   corresponding version tags as comments. Continue using Dependabot for updates.
 - **Consequences** The workflow runs the reviewed revision when upstream moves a tag.
   Action updates change the SHA explicitly in a reviewable diff.
+
+## ADR-0042: Publish the operator guide as a static bilingual site
+
+- **Context** Milestone 4 needs public English and French documentation for setup
+  and operation. The voice application and its configuration remain private.
+- **Decision** Build the versioned guide with MkDocs and publish only its static
+  output through GitHub Pages. Pull requests build the guide with strict checks.
+  Only the default branch can invoke the deployment job.
+- **Consequences** Both languages share one navigation and release cadence.
+  The guide can build locally without credentials or a running stack.

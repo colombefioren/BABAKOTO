@@ -49,3 +49,7 @@ check: lint typecheck test
 # Build the API Docker image
 docker-build:
     docker build -f api/Dockerfile -t babakoto-api:dev .
+
+# Build the English and French operator documentation
+docs-build:
+    uv run --frozen --only-group docs --isolated mkdocs build --strict
