@@ -57,7 +57,9 @@ just up cpu
 
 After `just dev`, set `GLADIA_API_KEY` and your LLM provider settings in the local `.env`
 before running `just up cpu`. `just dev` generates the local LiveKit key pair and service token.
-Open the playground at <http://localhost:3000>. In this profile microphone audio goes to Gladia
+Open the playground at <http://localhost:3000>. Sign in as `babakoto` with the
+`WEB_PLAYGROUND_PASSWORD` from `.env`. For an existing checkout, rerun `just dev` to add it.
+In this profile microphone audio goes to Gladia
 and follows the provider account's retention settings. [Gladia retention](https://eu1.docs.gladia.io/data/retention/)
 
 For the GPU profile, install the NVIDIA Container Toolkit and accept the Sunflower model's

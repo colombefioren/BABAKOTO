@@ -16,7 +16,13 @@ def main() -> None:
             env_file.write(template)
 
     values = dotenv_values(env_path, interpolate=False)
-    for name, size in (("LIVEKIT_API_KEY", 16), ("LIVEKIT_API_SECRET", 32), ("SERVICE_TOKEN", 32)):
+    credentials = (
+        ("LIVEKIT_API_KEY", 16),
+        ("LIVEKIT_API_SECRET", 32),
+        ("SERVICE_TOKEN", 32),
+        ("WEB_PLAYGROUND_PASSWORD", 32),
+    )
+    for name, size in credentials:
         if not values.get(name):
             env_path.chmod(0o600)
             set_key(env_path, name, secrets.token_hex(size), follow_symlinks=True)

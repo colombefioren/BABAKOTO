@@ -408,3 +408,15 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** Selecting the candidate needs a local export. A real CUDA training run
   and WER benchmark are required before choosing a default or publishing accuracy results.
   [Whisper Turbo model card](https://huggingface.co/openai/whisper-large-v3-turbo/blob/41f01f3fe87f28c78e2fbf8b568835947dd65ed9/README.md)
+
+## ADR-0028: Authenticate the self-hosted playground with an operator password
+
+- **Context** The playground can provision billable sessions. It needs an authenticated entry
+  point as work on the dashboard begins.
+- **Decision** Use browser Basic authentication for the loopback playground with one operator
+  username and a randomly generated local password. Validate the credential on the page and
+  independently on the token route before minting. Missing or invalid password configuration
+  returns `503`. The token route continues to check the request's origin.
+- **Consequences** `just dev` adds the credential to `.env` in existing checkouts and preserves
+  operator settings. The shared password suits one self-hosted playground. Deployments beyond
+  loopback need TLS protection for the credential and the edge controls from ADR-0023.
