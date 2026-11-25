@@ -449,3 +449,16 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** Only configuration text is stored in this table. The caller should
   keep the bearer token server-side. Readiness depends on access to the schema. An
   application rollback can leave this additive table in place.
+
+## ADR-0031: Keep editor requests and credentials on the web server
+
+- **Context** The operator needs a browser editor while the configuration API remains
+  private.
+- **Decision** The authenticated Next.js route reads configurations on the server and
+  submits writes via a server action that verifies the operator and request origin.
+  The server fetches through a dedicated internal network with the API bearer token.
+  Use the API's UUID cursor in the editor and generate an ID before submitting a
+  new configuration so a retry addresses the same record.
+- **Consequences** The dashboard can run without the voice services. The browser
+  receives configuration text after authentication and can keep unsaved form edits
+  when a write fails.

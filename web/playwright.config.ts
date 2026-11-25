@@ -23,6 +23,8 @@ export default defineConfig({
         reuseExistingServer: false,
         env: {
           WEB_PLAYGROUND_PASSWORD: password ?? '',
+          API_URL: '',
+          API_SECRET_KEY: '',
           LIVEKIT_URL: '',
           LIVEKIT_API_KEY: '',
           LIVEKIT_API_SECRET: '',

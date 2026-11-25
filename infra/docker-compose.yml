@@ -73,10 +73,12 @@ services:
       LIVEKIT_ROOM_SERVICE_URL: http://livekit:7880
       WEB_MAX_PLAYGROUND_ROOMS: ${WEB_MAX_PLAYGROUND_ROOMS:-4}
       WEB_PLAYGROUND_PASSWORD: ${WEB_PLAYGROUND_PASSWORD:-}
+      API_URL: http://api:8000
+      API_SECRET_KEY: ${API_SECRET_KEY:-}
       WEB_TRUSTED_PROXY_HOPS: ${WEB_TRUSTED_PROXY_HOPS:-0}
     ports:
       - '127.0.0.1:3000:3000'
-    networks: [edge]
+    networks: [edge, dashboard-control]
 
   agent:
     <<: *agent
@@ -229,7 +231,7 @@ services:
           -c,
           "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/readyz', timeout=3).close()",
         ]
-    networks: [private, database]
+    networks: [private, database, dashboard-control]
 
   agent-db:
     profiles: [dashboard]
@@ -253,6 +255,8 @@ networks:
   edge: {}
   outbound: {}
   database:
+    internal: true
+  dashboard-control:
     internal: true
 
 volumes:

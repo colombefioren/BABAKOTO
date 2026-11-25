@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Room, RoomEvent, type Track } from 'livekit-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LATENCY_TOPIC, parseLatency, percentile, type TurnLatency } from '@/lib/latency';
@@ -90,6 +91,9 @@ export default function Playground(): React.JSX.Element {
       <header>
         <h1>Babakoto</h1>
         <p className="muted">Talk to a Malagasy voice agent. Captions are always on.</p>
+        <Link className="configuration-link" href="/agents">
+          Agent configurations
+        </Link>
       </header>
 
       <button

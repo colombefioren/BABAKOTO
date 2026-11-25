@@ -18,9 +18,9 @@ up profile="cpu":
     case {{quote(profile)}} in cpu|gpu) ;; *) echo "Use just up cpu or just up gpu" >&2; exit 2 ;; esac
     docker compose --env-file .env -f infra/docker-compose.yml --profile {{quote(profile)}} up --build -d
 
-# Start the private configuration API and its database
+# Start the agent dashboard and configuration API
 up-dashboard:
-    docker compose --env-file .env -f infra/docker-compose.yml --profile dashboard up --build -d api
+    docker compose --env-file .env -f infra/docker-compose.yml --profile dashboard up --build -d web api
 
 # Stop the stack and keep downloaded model caches
 down:

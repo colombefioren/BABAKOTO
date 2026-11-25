@@ -1,7 +1,7 @@
 # Babakoto API
 
 The API stores named agent prompts and greeting text in PostgreSQL. The
-`dashboard` Compose profile starts only the API and its private database.
+`dashboard` Compose profile runs the API and its private database alongside the web editor.
 
 ```sh
 just dev

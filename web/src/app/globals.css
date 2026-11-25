@@ -142,3 +142,10 @@ h2 {
   font-size: 1.25rem;
   font-variant-numeric: tabular-nums;
 }
+
+.configuration-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--accent);
+  text-underline-offset: 0.2em;
+}

@@ -26,3 +26,12 @@ pnpm --filter babakoto-web build && pnpm --filter babakoto-web e2e
   `PLAYWRIGHT_CHROME_PATH` to a system Chrome.
 
 Not yet verified against a live LiveKit server and agent.
+
+## Agent editor
+
+Run `just dev` and `just up-dashboard`, then open <http://localhost:3000/agents>.
+Use the same operator login as the playground. The editor lists, creates and
+updates saved configurations through the private API. If running the web process
+directly, set `API_URL` and `API_SECRET_KEY` in its server environment.
+
+Selecting a saved configuration for a call is pending.

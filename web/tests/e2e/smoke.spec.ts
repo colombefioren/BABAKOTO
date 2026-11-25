@@ -19,10 +19,20 @@ test('starting without a LiveKit server configured shows a clear error', async (
 test('unauthenticated requests cannot open the playground or mint tokens', async ({ baseURL }) => {
   // Node fetch has no browser context from which to inherit the operator credentials.
   const page = await fetch(new URL('/', baseURL));
+  const dashboard = await fetch(new URL('/agents', baseURL));
   const endpoint = await fetch(new URL('/api/token', baseURL), { method: 'POST' });
-  for (const response of [page, endpoint]) {
+  for (const response of [page, dashboard, endpoint]) {
     expect(response.status, response.url).toBe(401);
     expect(response.headers.get('www-authenticate')).toMatch(/^Basic realm=/);
     expect(response.headers.get('cache-control')).toContain('no-store');
   }
+});
+
+test('the agent editor reports an unavailable configuration API', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Agent configurations' }).click();
+  await expect(page.getByRole('heading', { name: 'Agent configurations' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('alert')).toContainText(
+    'configuration API is unavailable',
+  );
 });
