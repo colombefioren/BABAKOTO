@@ -31,7 +31,12 @@ shows it; compare the two before quoting a number.
 
 A [marimo](https://marimo.io) notebook that installs the packages, starts the STT and TTS
 services inside the notebook process and runs the benchmark. Written for Molab; not yet run
-there (see ADR-0016 and ADR-0021). Secrets are typed into password boxes, never saved.
+there (see ADR-0016 and ADR-0021).
+
+Use a private notebook workspace. Put credentials, `SERVICE_TOKEN`, model revisions,
+`ALLOW_NON_COMMERCIAL_ASSETS=true`, and the absolute reference WAV path and transcript
+in its local `.env`. Set `TTS_REFERENCE_CONSENT_CONFIRMED=true` after obtaining signed consent.
+Keep the signed consent document in private storage.
 
 ## Held-out ASR evaluation
 

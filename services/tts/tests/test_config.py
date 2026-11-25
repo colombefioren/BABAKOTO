@@ -44,6 +44,7 @@ def test_omnivoice_reference_file_must_exist(tmp_path: Path) -> None:
             omnivoice_model_revision="abc",
             tts_reference_audio_path=str(tmp_path / "missing.wav"),
             tts_reference_text="salama",
+            tts_reference_consent_confirmed=True,
         )
 
 
@@ -56,6 +57,7 @@ def test_omnivoice_valid(tmp_path: Path) -> None:
         omnivoice_model_revision="abc",
         tts_reference_audio_path=str(clip),
         tts_reference_text="salama",
+        tts_reference_consent_confirmed=True,
     )
     assert cfg.omnivoice_model_revision == "abc"
 
@@ -75,3 +77,16 @@ def test_service_token_is_required_by_default() -> None:
 def test_short_service_token_is_rejected() -> None:
     with pytest.raises(ValidationError, match="at least"):
         make(tts_engine="fake", allow_unauthenticated=False, service_token="short")
+
+
+def test_omnivoice_requires_reference_speaker_consent(tmp_path: Path) -> None:
+    clip = tmp_path / "ref.wav"
+    clip.write_bytes(b"RIFF")
+    with pytest.raises(ValidationError, match="TTS_REFERENCE_CONSENT_CONFIRMED"):
+        make(
+            tts_engine="omnivoice",
+            allow_non_commercial_assets=True,
+            omnivoice_model_revision="abc",
+            tts_reference_audio_path=str(clip),
+            tts_reference_text="Hello",
+        )

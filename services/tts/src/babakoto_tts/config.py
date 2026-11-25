@@ -33,6 +33,7 @@ class TtsSettings(BaseSettings):
     omnivoice_device: str = "cuda:0"
     tts_reference_audio_path: str = ""
     tts_reference_text: str = ""
+    tts_reference_consent_confirmed: bool = False
 
     # MMS-TTS Malagasy (dev only, non-commercial).
     mms_model_id: str = "facebook/mms-tts-mlg"
@@ -77,6 +78,11 @@ class TtsSettings(BaseSettings):
             ]
             if missing:
                 raise ValueError(f"TTS_ENGINE=omnivoice needs: {', '.join(missing)}")
+            if not self.tts_reference_consent_confirmed:
+                raise ValueError(
+                    "Obtain the speaker's signed voice-cloning consent before setting "
+                    "TTS_REFERENCE_CONSENT_CONFIRMED=true"
+                )
             if not Path(self.tts_reference_audio_path).is_file():
                 raise ValueError(
                     f"TTS_REFERENCE_AUDIO_PATH does not point to a file: "

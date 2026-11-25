@@ -22,6 +22,7 @@ def omnivoice_settings(tmp_path: Path) -> TtsSettings:
         omnivoice_model_revision="rev1",
         tts_reference_audio_path=str(clip),
         tts_reference_text="salama",
+        tts_reference_consent_confirmed=True,
     )
 
 

@@ -24,7 +24,9 @@ Every endpoint except `/healthz` and `/readyz` needs `Authorization: Bearer $SER
 | `fake`                | none                 | n/a                         | Tones, for tests and wiring checks                                                                          |
 
 Both real engines use non-commercial weights, so the service refuses to start unless
-`ALLOW_NON_COMMERCIAL_ASSETS=true`, and logs a warning when it does. Never use them in production.
+`ALLOW_NON_COMMERCIAL_ASSETS=true`, and logs a warning when it does. Never use them in production. Set
+`TTS_REFERENCE_CONSENT_CONFIRMED=true` only after verifying that the reference speaker
+signed consent for voice cloning. Keep their agreement in private storage.
 
 ```sh
 ALLOW_UNAUTHENTICATED=true TTS_ENGINE=fake uv run uvicorn --factory babakoto_tts.app:create_app_from_env --port 8002

@@ -9,7 +9,7 @@ TTS services start on localhost in background threads and the benchmark calls th
 Status: written from Molab's public docs, NOT yet run there. The docs do not say whether the
 notebook has a shell, outbound internet, or secret storage. If a cell fails for that reason, the
 latency script itself (`python -m babakoto_eval.latency`) works on any machine with a GPU.
-Never save secrets in this file: type them into the password boxes in cell 2.
+Keep credentials in the workspace's private .env file.
 """
 
 import marimo
@@ -27,28 +27,13 @@ def _():
         # Babakoto latency benchmark
 
         1. Turn on a GPU in the notebook specs button (header).
-        2. Enter your keys below. They stay in memory and are never written to disk.
+        2. Configure the private `.env` with model revisions, keys and a consented reference voice.
         3. Run the cells top to bottom. The last cell prints p50 and p95.
 
         The TTS engine uses **non-commercial weights**: this notebook is for research only.
         """
     )
     return (mo,)
-
-
-@app.cell
-def _(mo):
-    hf_token = mo.ui.text(label="Hugging Face token (read)", kind="password")
-    llm_key = mo.ui.text(label="LLM API key", kind="password")
-    llm_provider = mo.ui.dropdown(
-        ["anthropic", "openai", "google"], value="anthropic", label="LLM provider"
-    )
-    stt_revision = mo.ui.text(label="SunflowerASR commit hash", full_width=True)
-    tts_revision = mo.ui.text(label="OmniVoice commit hash", full_width=True)
-    ref_audio = mo.ui.file(label="Reference voice clip (WAV, 5 to 15 s)", filetypes=[".wav"])
-    ref_text = mo.ui.text_area(label="Exact transcript of the reference clip", full_width=True)
-    mo.vstack([hf_token, llm_key, llm_provider, stt_revision, tts_revision, ref_audio, ref_text])
-    return hf_token, llm_key, llm_provider, ref_audio, ref_text, stt_revision, tts_revision
 
 
 @app.cell
@@ -83,40 +68,25 @@ def _(mo):
             [sys.executable, "-m", "pip", "install", "-q", "-e", str(repo / target)], check=True
         )
     mo.md("Packages installed.")
-    return Path, repo, subprocess, sys
+    return Path, repo
 
 
 @app.cell
-def _(Path, hf_token, llm_key, llm_provider, mo, ref_audio, ref_text, stt_revision, tts_revision):
+def _(Path, mo, repo):
     import os
-    import secrets
 
     import torch
+    from dotenv import load_dotenv
 
+    env_file = repo / ".env" if (repo / ".env").is_file() else Path(".env")
+    mo.stop(not env_file.is_file(), mo.md("Configure the private .env before running."))
+    load_dotenv(env_file)
     mo.stop(not torch.cuda.is_available(), mo.md("**No GPU detected.** Enable one and rerun."))
     gpu_name = torch.cuda.get_device_name(0)
-    clip = Path("reference.wav")
-    mo.stop(not ref_audio.value, mo.md("Upload the reference clip first."))
-    clip.write_bytes(ref_audio.contents())
-    service_token = secrets.token_hex(16)
-    key_name = {
-        "anthropic": "ANTHROPIC_API_KEY",
-        "openai": "OPENAI_API_KEY",
-        "google": "GOOGLE_API_KEY",
-    }[llm_provider.value]
     os.environ.update(
         {
-            key_name: llm_key.value,
-            "HF_TOKEN": hf_token.value,
-            "SERVICE_TOKEN": service_token,
-            "LLM_PROVIDER": llm_provider.value,
             "STT_ENGINE": "sunflower",
-            "SUNFLOWER_MODEL_REVISION": stt_revision.value,
             "TTS_ENGINE": "omnivoice",
-            "ALLOW_NON_COMMERCIAL_ASSETS": "true",
-            "OMNIVOICE_MODEL_REVISION": tts_revision.value,
-            "TTS_REFERENCE_AUDIO_PATH": str(clip.resolve()),
-            "TTS_REFERENCE_TEXT": ref_text.value,
             "STT_SERVICE_URL": "http://127.0.0.1:8001",
             "TTS_SERVICE_URL": "http://127.0.0.1:8002",
         }
@@ -126,7 +96,7 @@ def _(Path, hf_token, llm_key, llm_provider, mo, ref_audio, ref_text, stt_revisi
 
 
 @app.cell
-def _(mo):
+def _(gpu_name, mo):
     import threading
     import time
 
@@ -143,6 +113,7 @@ def _(mo):
         threading.Thread(target=server.run, daemon=True).start()
         return server
 
+    assert gpu_name
     servers = [serve(stt_app, 8001), serve(tts_app, 8002)]
     deadline = time.time() + 900  # model downloads and loading can take minutes
     for port in (8001, 8002):

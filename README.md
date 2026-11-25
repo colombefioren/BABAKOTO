@@ -67,7 +67,7 @@ gated terms. Set `HF_TOKEN` and `SUNFLOWER_MODEL_REVISION` in `.env`, then run `
 The GPU profile also defaults to the test tone. For real speech in local research, choose a
 TTS engine in [.env.example](.env.example) and explicitly set `ALLOW_NON_COMMERCIAL_ASSETS=true`.
 OmniVoice requires a pinned revision and a local reference WAV with its exact transcript and
-the speaker's signed consent. MMS uses `TTS_SAMPLE_RATE=16000` with a pinned MMS revision.
+the speaker's signed consent. Set `TTS_REFERENCE_CONSENT_CONFIRMED=true` after verifying it. MMS uses `TTS_SAMPLE_RATE=16000` with a pinned MMS revision.
 
 Use `just down` before switching profiles. Use `just check` for local lint, type checks and tests.
 

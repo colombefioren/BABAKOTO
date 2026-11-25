@@ -521,3 +521,13 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** A model can refine the search without credentials, a destination URL,
   or another agent's ID in its tool arguments. Tool results remain in the session's
   in-memory chat history. Unconfigured playground calls expose no tools.
+
+## ADR-0037: Require an explicit consent assertion for reference voice cloning
+
+- **Context** A WAV and its transcript do not establish permission to synthesize the
+  speaker's voice.
+- **Decision** Require `TTS_REFERENCE_CONSENT_CONFIRMED=true` for OmniVoice, separately
+  from the non-commercial opt-in. Read the assertion and provider keys from the
+  notebook workspace's private `.env`, using the same service validation as Compose.
+- **Consequences** The operator checks the signed agreement in private storage.
+  Babakoto receives only the assertion. Existing OmniVoice deployments must add it.
