@@ -73,5 +73,14 @@ runs. [Tracking issue #15](https://github.com/colombefioren/BABAKOTO/issues/15)
 - Licenses remain REPORTED or UNVERIFIED, with non-commercial restrictions applied where
   documented. None are VERIFIED. [License register](../THIRD_PARTY_LICENSES.md)
 - Owner inputs and native review are tracked in
-  [issue #23](https://github.com/colombefioren/BABAKOTO/issues/23). Milestone 2 awaits the
-  owner's go-ahead.
+  [issue #23](https://github.com/colombefioren/BABAKOTO/issues/23).
+
+## Milestone 2: Malagasy ASR
+
+The local corpus preparation, Whisper Turbo fine-tuning, opt-in inference engine and
+held-out WER comparison are implemented. [Tracking issue #33](https://github.com/colombefioren/BABAKOTO/issues/33)
+
+Checks use synthetic PCM and fake model runtimes. They verify source and split rules,
+manifest integrity, checkpoint export wiring and the aggregate WER computation.
+No approved speech, real training run or GPU-derived WER is available. Model and dataset
+licenses remain REPORTED or UNVERIFIED. [Acceptance inputs](https://github.com/colombefioren/BABAKOTO/issues/34)

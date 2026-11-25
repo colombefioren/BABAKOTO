@@ -32,3 +32,22 @@ shows it; compare the two before quoting a number.
 A [marimo](https://marimo.io) notebook that installs the packages, starts the STT and TTS
 services inside the notebook process and runs the benchmark. Written for Molab; not yet run
 there (see ADR-0016 and ADR-0021). Secrets are typed into password boxes, never saved.
+
+## Held-out ASR evaluation
+
+Use an independently collected, human-transcribed test split from the same
+[prepared manifest](../training/asr/README.md) used to train the candidate. Configure
+`HF_TOKEN` locally and accept Sunflower's gated terms before running the comparison.
+
+```sh
+uv sync --all-packages --frozen --extra asr
+uv run --no-sync python -m babakoto_eval.wer \
+  --root data/asr --manifest data/asr/manifest.json \
+  --candidate outputs/babakoto-asr --sunflower-revision "<commit hash>" \
+  > eval/results/asr-wer.json
+```
+
+Create `eval/results/` first. The report contains corpus-level edit counts, reference word
+counts, WER as a fraction, the manifest digest, and model provenance. Scoring uses Unicode
+casefolding, canonical accents, alphanumeric words and internal apostrophes. Both recognizers
+receive the same waveforms. The report omits transcripts, speaker IDs, paths and audio.

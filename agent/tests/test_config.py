@@ -41,9 +41,8 @@ def test_gladia_requires_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
     assert TOKEN not in str(error.value)
 
 
-def test_future_babakoto_asr_is_recognized_as_unavailable() -> None:
-    with pytest.raises(ValidationError, match="reserved for Milestone 2"):
-        make(stt_provider="babakoto-asr")
+def test_babakoto_asr_can_use_the_local_service() -> None:
+    assert make(stt_provider="babakoto-asr").stt_provider == "babakoto-asr"
 
 
 def test_default_prompts_are_loaded_from_the_repo() -> None:

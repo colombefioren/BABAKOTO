@@ -6,7 +6,7 @@ Think "ElevenLabs Agents, but for Malagasy, and open source": a user talks (brow
 embedded widget), Babakoto listens (speech-to-text), thinks (LLM with tools and a knowledge
 base) and answers out loud (text-to-speech), with natural turn-taking and interruptions.
 
-> **Status: pre-alpha.** The Milestone 1 voice pipeline is implemented. Live-call acceptance
+> **Status: pre-alpha.** The Milestone 1 voice pipeline and Milestone 2 ASR tooling are implemented. Live-call acceptance
 > and latency measurements are pending. See [project progress](docs/PROGRESS.md).
 
 Babakoto is named after the indri, the lemur of Madagascar known for its song.
@@ -27,7 +27,7 @@ caller (browser / phone / widget)
 
 Providers are chosen by config, not code:
 
-- STT: `sunflower` (self-hosted, default), `gladia` (cloud), `babakoto-asr` (reserved for Milestone 2)
+- STT: `sunflower` (self-hosted, default), `gladia` (cloud), `babakoto-asr` (local fine-tuned checkpoint)
 - TTS: `fake` (test tone), `omnivoice` and `mms` (dev-only, non-commercial), `babakoto-tts` (Milestone 3)
 - LLM: Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint
 

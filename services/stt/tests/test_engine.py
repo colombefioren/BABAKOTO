@@ -1,5 +1,6 @@
 import sys
 import types
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -91,6 +92,9 @@ def _install_fake_runtime(monkeypatch: pytest.MonkeyPatch, calls: dict[str, Any]
     class Model:
         dtype = "fp32"
 
+        def __init__(self) -> None:
+            self.generation_config = types.SimpleNamespace(language="en", task="translate")
+
         @classmethod
         def from_pretrained(cls, model_id: str, **kwargs: Any) -> "Model":
             calls["model"] = (model_id, kwargs)
@@ -104,6 +108,7 @@ def _install_fake_runtime(monkeypatch: pytest.MonkeyPatch, calls: dict[str, Any]
 
         def generate(self, features: Any, **kwargs: Any) -> list[int]:
             calls["generate"] = kwargs
+            calls["generation_config"] = self.generation_config
             return [1, 2, 3]
 
     transformers = types.ModuleType("transformers")
@@ -123,6 +128,35 @@ def test_sunflower_loads_pinned_revision_and_forces_malagasy(
     result = engine.transcribe(np.zeros(16000, dtype=np.float32))
     assert result.text == "manao ahoana"
     assert calls["model"][1]["revision"] == "rev1"
+    assert calls["model"][1]["torch_dtype"] == "fp32"
     assert calls["processor"][1]["revision"] == "rev1"
-    assert calls["generate"]["forced_decoder_ids"] == [(1, 50349), (2, 50359), (3, 50363)]
+    assert calls["generation_config"].forced_decoder_ids == [(1, 50349), (2, 50359), (3, 50363)]
+    assert calls["generation_config"].language is None
+    assert calls["generation_config"].task is None
     assert calls["generate"]["num_beams"] == 1
+
+
+def test_babakoto_asr_loads_only_a_local_checkpoint(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls: dict[str, Any] = {}
+    _install_fake_runtime(monkeypatch, calls)
+    (tmp_path / "config.json").touch()
+    config = SttSettings(
+        _env_file=None,
+        stt_engine="babakoto-asr",
+        babakoto_asr_model_path=str(tmp_path),
+        babakoto_asr_device="cpu",
+        allow_unauthenticated=True,
+    )
+    engine = build_engine(config)
+    engine.load()
+    assert engine.transcribe(tone(0.1)).language == "mlg"
+    assert calls["model"][0] == str(tmp_path)
+    assert calls["model"][1]["local_files_only"] is True
+    assert calls["model"][1]["use_safetensors"] is True
+    assert calls["generate"]["language"] == "mg"
+    assert calls["generate"]["task"] == "transcribe"
+    assert config.audio_limit_seconds == 30
+    with pytest.raises(ValueError, match="at most 30"):
+        engine.transcribe(np.zeros(480001, dtype=np.float32))

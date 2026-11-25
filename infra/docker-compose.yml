@@ -80,7 +80,7 @@ services:
     profiles: [gpu]
     environment:
       <<: *agent-env
-      STT_PROVIDER: sunflower
+      STT_PROVIDER: ${STT_PROVIDER:-sunflower}
       STT_SERVICE_URL: http://stt:8001
       TTS_SAMPLE_RATE: ${TTS_SAMPLE_RATE:-24000}
     depends_on:
@@ -119,6 +119,8 @@ services:
       SUNFLOWER_MODEL_REVISION: ${SUNFLOWER_MODEL_REVISION:-}
       SUNFLOWER_LANGUAGE_TOKEN_ID: ${SUNFLOWER_LANGUAGE_TOKEN_ID:-50349}
       SUNFLOWER_DEVICE: ${SUNFLOWER_DEVICE:-cuda}
+      BABAKOTO_ASR_MODEL_PATH: /run/babakoto-asr
+      BABAKOTO_ASR_DEVICE: ${BABAKOTO_ASR_DEVICE:-cuda}
       MAX_AUDIO_SECONDS: ${MAX_AUDIO_SECONDS:-60}
       VAD_THRESHOLD_DB: ${VAD_THRESHOLD_DB:--40}
       VAD_SILENCE_MS: ${VAD_SILENCE_MS:-500}
@@ -135,6 +137,12 @@ services:
     deploy: *gpu
     volumes:
       - stt-model-cache:/home/babakoto/.cache/huggingface
+      - type: bind
+        source: ${BABAKOTO_ASR_MODEL_PATH:-/dev/null}
+        target: /run/babakoto-asr
+        read_only: true
+        bind:
+          create_host_path: false
     networks: [private, outbound]
 
   tts:
