@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # GPU image: the torch wheel bundles CUDA libraries, the host needs the NVIDIA Container Toolkit.
-# The default engine uses non-commercial weights and needs ALLOW_NON_COMMERCIAL_ASSETS=true.
+# Real model weights are downloaded only after the engine's license gate passes.
 FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS build
 COPY --from=ghcr.io/astral-sh/uv:0.13.9 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
@@ -18,10 +18,13 @@ COPY services/stt/pyproject.toml services/stt/README.md services/stt/
 COPY training/asr/pyproject.toml training/asr/README.md training/asr/
 COPY training/tts/pyproject.toml training/tts/README.md training/tts/
 COPY eval/pyproject.toml eval/README.md eval/
-RUN uv sync --frozen --no-dev --package babakoto-tts --extra omnivoice --no-editable
+# Compose's fake CPU engine needs no model runtime.
+ARG TTS_UV_EXTRAS="--extra omnivoice --extra mms"
+RUN uv sync --frozen --no-dev --package babakoto-tts --no-editable $TTS_UV_EXTRAS
 
 FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
-RUN useradd --system --uid 10001 --create-home babakoto
+RUN useradd --system --uid 10001 --create-home babakoto \
+    && install -d -o 10001 -m 0700 /home/babakoto/.cache/huggingface
 COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH" HF_HOME=/home/babakoto/.cache/huggingface
 USER 10001

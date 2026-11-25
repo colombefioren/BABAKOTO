@@ -337,3 +337,27 @@ Format: context, options considered, decision, consequences. Newest last.
   determined attacker. Public deployment
   still needs an edge or WAF limit, authentication and a cap on concurrent rooms; these come
   with the Milestone 3 dashboard and are tracked there.
+
+### ADR-0023 addendum
+
+- With `WEB_TRUSTED_PROXY_HOPS=0`, all visitors share one bucket. The limiter tracks up to
+  10,000 keys and refuses new keys when full. The local playground accepts both limits.
+  Public deployments need an edge or WAF rate limit, authentication and a concurrent-room
+  cap in Milestone 3.
+
+## ADR-0024: Local Compose publishes only loopback ports
+
+- **Context:** The playground needs WebRTC on the host, private speech service endpoints,
+  and outbound connectivity for model downloads and cloud APIs.
+- **Decision:** Publish the web and LiveKit ports on IPv4 loopback. LiveKit advertises
+  the host loopback and its internal ICE candidates so the host browser and the worker
+  can each reach it. The worker uses internal DNS for signaling and speech services.
+  The web and LiveKit have an edge bridge for port publishing. The worker and model
+  services that need remote providers or downloads use a separate outbound bridge.
+  Speech APIs have no host port mappings. Compose passes each service its own settings.
+- **Consequences:** This setup targets the workstation running Docker. Run one profile
+  at a time. The GPU profile uses Sunflower and reserves an NVIDIA device for each speech
+  service. The CPU TTS image installs no model extras and uses the fake engine. The GPU
+  TTS engine also defaults to fake until the operator opts in to non-commercial assets.
+  Model caches stay in local Docker volumes. A consented reference clip, when configured,
+  is mounted read-only from outside the repo. Set an absolute host path readable by UID 10001.

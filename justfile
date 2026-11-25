@@ -3,18 +3,24 @@
 default:
     @just --list
 
-# Install tooling and print next steps
+# Install tooling and initialize local credentials
 dev:
-    uv sync --all-packages
-    pnpm install
+    uv sync --all-packages --frozen
+    pnpm install --frozen-lockfile
     uv tool run pre-commit install
-    @echo ""
-    @echo "Babakoto dev environment ready."
-    @echo "Next steps:"
-    @echo "  1. cp .env.example .env   (fill in keys; never commit .env)"
-    @echo "  2. just check             (lint, type-check, tests)"
-    @echo "  3. Read CONTRIBUTING.md and docs/DECISIONS.md"
-    @echo "Services (stt, tts, agent, web) arrive in Milestone 1."
+    uv run --no-sync python infra/dev_env.py
+    @echo "Local credentials are ready in .env. Keep provider keys there too."
+
+# Build and start one profile
+up profile="cpu":
+    #!/usr/bin/env sh
+    set -eu
+    case {{quote(profile)}} in cpu|gpu) ;; *) echo "Use just up cpu or just up gpu" >&2; exit 2 ;; esac
+    docker compose --env-file .env -f infra/docker-compose.yml --profile {{quote(profile)}} up --build -d
+
+# Stop the stack and keep downloaded model caches
+down:
+    docker compose --env-file .env -f infra/docker-compose.yml --profile '*' down
 
 # Lint everything
 lint:
