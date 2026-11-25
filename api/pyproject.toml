@@ -4,7 +4,16 @@ version = "0.0.0"
 description = "Babakoto backend API"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-dependencies = ["fastapi>=0.115", "pydantic-settings>=2.6", "uvicorn>=0.32"]
+dependencies = [
+  "babakoto-common",
+  "fastapi>=0.115",
+  "psycopg[binary]>=3.2",
+  "pydantic-settings>=2.6",
+  "uvicorn>=0.32",
+]
+
+[tool.uv.sources]
+babakoto-common = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

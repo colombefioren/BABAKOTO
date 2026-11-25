@@ -435,3 +435,17 @@ Format: context, options considered, decision, consequences. Newest last.
   needs shared admission state. LiveKit tracks a teardown race affecting replayed join
   credentials, so the issuer limit alone is insufficient as a transport-wide quota.
   [LiveKit room teardown issue](https://github.com/livekit/livekit/issues/4972)
+
+## ADR-0030: Store agent configurations in the private PostgreSQL API
+
+- **Context** The dashboard needs persisted named configurations with prompt and greeting
+  text. The deployment already treats provider credentials as operator settings.
+- **Decision** Store the configuration in one PostgreSQL row per UUID. Expose v1 REST
+  endpoints with bearer authentication and bounded cursor pagination. A client-generated
+  UUID makes PUT and DELETE retryable. PostgreSQL applies a full replacement atomically.
+  Run additive, versioned migrations in a transaction with an advisory lock before
+  serving the API. The dashboard Compose profile puts PostgreSQL on a dedicated internal
+  network and leaves both services without published host ports.
+- **Consequences** Only configuration text is stored in this table. The caller should
+  keep the bearer token server-side. Readiness depends on access to the schema. An
+  application rollback can leave this additive table in place.

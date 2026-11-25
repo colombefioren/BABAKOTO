@@ -201,12 +201,61 @@ services:
       private:
         aliases: [tts]
 
+  api:
+    profiles: [dashboard]
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    command:
+      - sh
+      - -ec
+      - python -m babakoto_api.migrate && exec uvicorn babakoto_api.main:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: postgresql://babakoto@agent-db:5432/babakoto
+      PGPASSWORD: ${POSTGRES_PASSWORD:-}
+      API_SECRET_KEY: ${API_SECRET_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      agent-db:
+        condition: service_healthy
+    healthcheck:
+      interval: 5s
+      timeout: 4s
+      retries: 12
+      test:
+        [
+          CMD,
+          python,
+          -c,
+          "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/readyz', timeout=3).close()",
+        ]
+    networks: [private, database]
+
+  agent-db:
+    profiles: [dashboard]
+    image: postgres:17@sha256:87c8b42f423b45d5247e6aa8fdb2e7762fec164c68a50fe3eb07e7bfcaf4dbcf
+    environment:
+      POSTGRES_DB: babakoto
+      POSTGRES_USER: babakoto
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      test: [CMD, pg_isready, -h, 127.0.0.1, -U, babakoto, -d, babakoto]
+    volumes:
+      - agent-db-data:/var/lib/postgresql/data
+    networks: [database]
+
 networks:
   private:
     internal: true
   edge: {}
   outbound: {}
+  database:
+    internal: true
 
 volumes:
   stt-model-cache: {}
   tts-model-cache: {}
+  agent-db-data: {}

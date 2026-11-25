@@ -21,6 +21,8 @@ def main() -> None:
         ("LIVEKIT_API_SECRET", 32),
         ("SERVICE_TOKEN", 32),
         ("WEB_PLAYGROUND_PASSWORD", 32),
+        ("API_SECRET_KEY", 32),
+        ("POSTGRES_PASSWORD", 32),
     )
     for name, size in credentials:
         if not values.get(name):
