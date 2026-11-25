@@ -355,6 +355,8 @@ Format: context, options considered, decision, consequences. Newest last.
   The web and LiveKit have an edge bridge for port publishing. The worker and model
   services that need remote providers or downloads use a separate outbound bridge.
   Speech APIs have no host port mappings. Compose passes each service its own settings.
+  Startup validation messages omit raw settings input so configuration errors do not print
+  credentials or reference text.
 - **Consequences:** This setup targets the workstation running Docker. Run one profile
   at a time. The GPU profile uses Sunflower and reserves an NVIDIA device for each speech
   service. The CPU TTS image installs no model extras and uses the fake engine. The GPU
