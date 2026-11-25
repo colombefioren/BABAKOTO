@@ -379,3 +379,32 @@ Format: context, options considered, decision, consequences. Newest last.
   [LiveKit plugin](https://docs.livekit.io/agents/models/stt/gladia/) ·
   [Gladia Malagasy support](https://www.gladia.io/product/languages/malagasy) ·
   [Gladia retention](https://eu1.docs.gladia.io/data/retention/)
+
+## ADR-0026: Local ASR manifest freezes provenance and held-out splits
+
+- **Context** WAXAL appears in Sunflower's training and overlaps with the Malagasy 100-hour
+  corpus. The benchmark needs independent speech and stable, cross-corpus speaker IDs.
+- **Decision** Prepare a private, schema-validated manifest from locally supplied WAV files,
+  an operator-approved source register, and explicitly assigned speaker-disjoint splits.
+  Public sources are restricted to training. Dev and test use independently collected and
+  approved partner speech. Exact PCM digests reject duplicates and detect changes after
+  preparation. The final WER comparison pins the Sunflower revision and uses the manifest
+  digest from the candidate export.
+- **Consequences** The tooling has no data download or scraping. Source authorization and
+  recording or speaker overlap beyond exact fingerprints still require human review. WER is
+  calculated over the combined reference word count with the same normalization for each model.
+  The report contains aggregate metrics and model provenance.
+
+## ADR-0027: Pin Whisper Turbo for the Babakoto ASR checkpoint
+
+- **Context** The self-hosted alternate recognizer should train on a single Molab GPU and
+  reuse the existing local STT interface.
+- **Decision** Use the pinned Whisper Turbo base with its native `mg` token and train
+  LoRA adapters on attention query and value projections. Train in-process and export
+  merged safetensors to a local directory, with no model publishing. The optional
+  `babakoto-asr` engine loads only local checkpoints and caps each turn at the model's
+  short-form audio window. Sunflower remains the default, using its explicit language
+  prefix in the Transformers generation config.
+- **Consequences** Selecting the candidate needs a local export. A real CUDA training run
+  and WER benchmark are required before choosing a default or publishing accuracy results.
+  [Whisper Turbo model card](https://huggingface.co/openai/whisper-large-v3-turbo/blob/41f01f3fe87f28c78e2fbf8b568835947dd65ed9/README.md)

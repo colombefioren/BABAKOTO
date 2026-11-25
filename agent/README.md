@@ -9,7 +9,7 @@ caller --WebRTC--> LiveKit --> worker
                                             -> BabakotoTts   -> POST tts:8002/synthesize/stream
 ```
 
-- `STT_PROVIDER=sunflower` (default) transcribes each utterance through the local STT service. `STT_PROVIDER=gladia` streams audio to Gladia with `GLADIA_API_KEY` and requests Malagasy (`mg`). `babakoto-asr` is reserved for Milestone 2.
+- `STT_PROVIDER=sunflower` (default) transcribes each utterance through the local STT service. `STT_PROVIDER=gladia` streams audio to Gladia with `GLADIA_API_KEY` and requests Malagasy (`mg`). `STT_PROVIDER=babakoto-asr` calls the local service configured with the exported checkpoint.
 - `LLM_PROVIDER` and `LLM_MODEL` select the LLM. The TTS engine is selected in the TTS service.
 - The default prompt is Malagasy: `prompts/default.mg.md`, with an English translation beside it. Override with `SYSTEM_PROMPT_PATH`.
 - Turn-taking: LiveKit's turn-detector model does not list Malagasy, so turns end on VAD silence. Endpointing and the interruption threshold (barge-in budget 300 ms) are settings.
