@@ -569,3 +569,13 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** CPU and GPU profiles can both serve the local voice. The fake
   engine remains their default. The operator confirms voice permissions and keeps
   all training artifacts private. Playback quality and speed need real evaluation.
+
+## ADR-0041: Pin GitHub Actions to their resolved release commits
+
+- **Context** ADR-0011 deferred immutable action references until the first release.
+  A tag can move even when workflow code is unchanged.
+- **Decision** Use full commit SHAs for every external action in repository-owned
+  workflows. Resolve annotated tags to their underlying commits and retain the
+  corresponding version tags as comments. Continue using Dependabot for updates.
+- **Consequences** The workflow runs the reviewed revision when upstream moves a tag.
+  Action updates change the SHA explicitly in a reviewable diff.
