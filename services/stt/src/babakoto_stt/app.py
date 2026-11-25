@@ -62,7 +62,7 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
         # The body size middleware has already enforced `max_upload_bytes`.
         body = await file.read()
         try:
-            audio = decode_wav(body, settings.max_audio_seconds)
+            audio = decode_wav(body, settings.audio_limit_seconds)
         except AudioTooLongError as exc:
             raise HTTPException(status_code=413, detail=str(exc)) from exc
         except AudioError as exc:
@@ -83,7 +83,7 @@ def create_app(settings: SttSettings, engine: SttEngine | None = None) -> FastAP
             settings.vad_threshold_db,
             settings.vad_silence_ms,
             settings.vad_min_speech_ms,
-            settings.max_audio_seconds,
+            settings.audio_limit_seconds,
         )
         while True:
             message = await ws.receive()

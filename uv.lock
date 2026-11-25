@@ -583,11 +583,20 @@ dependencies = [
     { name = "httpx" },
 ]
 
+[package.optional-dependencies]
+asr = [
+    { name = "babakoto-stt", extra = ["sunflower"] },
+    { name = "babakoto-training-asr" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "babakoto-agent", editable = "agent" },
+    { name = "babakoto-stt", extras = ["sunflower"], marker = "extra == 'asr'", editable = "services/stt" },
+    { name = "babakoto-training-asr", marker = "extra == 'asr'", editable = "training/asr" },
     { name = "httpx", specifier = ">=0.27" },
 ]
+provides-extras = ["asr"]
 
 [[package]]
 name = "babakoto-malagasy-text"
@@ -635,6 +644,30 @@ provides-extras = ["sunflower"]
 name = "babakoto-training-asr"
 version = "0.0.0"
 source = { editable = "training/asr" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.optional-dependencies]
+train = [
+    { name = "accelerate" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "peft" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "accelerate", marker = "extra == 'train'", specifier = ">=1.0" },
+    { name = "numpy", marker = "extra == 'train'", specifier = ">=2.0" },
+    { name = "peft", marker = "extra == 'train'", specifier = ">=0.19" },
+    { name = "pydantic", specifier = ">=2.6" },
+    { name = "torch", marker = "extra == 'train'", specifier = ">=2.5" },
+    { name = "transformers", marker = "extra == 'train'", specifier = ">=5.24" },
+]
+provides-extras = ["train"]
 
 [[package]]
 name = "babakoto-training-tts"
@@ -3812,6 +3845,28 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5a/82/42f767fc1c1143d6fd36efb827202a2d997a375e160a71eb2888a925aac1/pathspec-1.1.1.tar.gz", hash = "sha256:17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a", size = 135180, upload-time = "2026-04-27T01:46:08.907Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl", hash = "sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189", size = 57328, upload-time = "2026-04-27T01:46:07.06Z" },
+]
+
+[[package]]
+name = "peft"
+version = "0.22.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "huggingface-hub" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "packaging" },
+    { name = "psutil" },
+    { name = "pyyaml" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/14/47/277ac750804eb771f8b7d3126870c01bb1270121b63e5b0a12e6e19b8fe4/peft-0.22.0.tar.gz", hash = "sha256:e7fca396b98e6c1b0b02538e45efd84875c4d0d074c29c837e372cd7c845647a", size = 1108661, upload-time = "2026-11-19T14:55:41.595Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/f2/107e752b64f5636ff92aed4010bad2448d9dd15d9fcf6c1c01b1075dfd76/peft-0.22.0-py3-none-any.whl", hash = "sha256:397f09710e3e1b6ad730211468839aa271732b51a50e99d4f44f2a6e8d9a9f0b", size = 886740, upload-time = "2026-11-19T14:55:39.08Z" },
 ]
 
 [[package]]

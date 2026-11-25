@@ -19,7 +19,7 @@ LANGUAGE = "mlg"
 
 
 def build_stt(settings: AgentSettings) -> stt.STT[Any]:
-    """Use streaming for Gladia and the local HTTP adapter for Sunflower."""
+    """Use streaming for Gladia and the HTTP adapter for local engines."""
     if settings.stt_provider == "gladia":
         return gladia.STT(
             api_key=settings.gladia_api_key.get_secret_value().strip(),
@@ -28,6 +28,7 @@ def build_stt(settings: AgentSettings) -> stt.STT[Any]:
         )
     return BabakotoStt(
         base_url=settings.stt_service_url,
+        model="babakoto-asr" if settings.stt_provider == "babakoto-asr" else "SunflowerASR",
         token=settings.service_token,
         timeout_s=settings.service_timeout_s,
     )
@@ -42,16 +43,18 @@ class BabakotoStt(stt.STT[Any]):
         base_url: str,
         token: str,
         timeout_s: float = 30.0,
+        model: str = "SunflowerASR",
         client: httpx.AsyncClient | None = None,
     ) -> None:
         super().__init__(capabilities=stt.STTCapabilities(streaming=False, interim_results=False))
+        self._model = model
         self._client = client or httpx.AsyncClient(
             base_url=base_url, headers={"Authorization": f"Bearer {token}"}, timeout=timeout_s
         )
 
     @property
     def model(self) -> str:
-        return "SunflowerASR"
+        return self._model
 
     @property
     def provider(self) -> str:

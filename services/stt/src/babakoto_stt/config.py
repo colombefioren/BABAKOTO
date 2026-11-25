@@ -1,11 +1,14 @@
 """Typed settings for the STT service, validated at startup."""
 
+from pathlib import Path
 from typing import Literal
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from babakoto_common.auth import MIN_TOKEN_LENGTH
+
+BABAKOTO_ASR_MAX_AUDIO_SECONDS = 30
 
 
 class SttSettings(BaseSettings):
@@ -19,7 +22,7 @@ class SttSettings(BaseSettings):
     allow_unauthenticated: bool = False
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     # `fake` returns canned text and is for tests and wiring checks only.
-    stt_engine: Literal["sunflower", "fake"] = "sunflower"
+    stt_engine: Literal["sunflower", "babakoto-asr", "fake"] = "sunflower"
     sunflower_model_id: str = "Sunbird/SunflowerASR-51-african-languages"
     # Commit hash of the model repo. Required so runs are reproducible.
     sunflower_model_revision: str = ""
@@ -27,6 +30,8 @@ class SttSettings(BaseSettings):
     sunflower_language_token_id: int = 50349
     sunflower_device: str = "cuda"
     hf_token: str = ""
+    babakoto_asr_model_path: str = ""
+    babakoto_asr_device: str = "cuda"
     # Seconds of audio above which /transcribe is rejected.
     max_audio_seconds: float = 60.0
     # Largest accepted upload and WebSocket message, in bytes.
@@ -55,4 +60,15 @@ class SttSettings(BaseSettings):
                 "SUNFLOWER_MODEL_REVISION must be set to a commit hash of "
                 f"{self.sunflower_model_id} (or set STT_ENGINE=fake for tests)"
             )
+        if self.stt_engine == "babakoto-asr" and not (
+            self.babakoto_asr_model_path
+            and (Path(self.babakoto_asr_model_path) / "config.json").is_file()
+        ):
+            raise ValueError("BABAKOTO_ASR_MODEL_PATH must point to a local checkpoint directory")
         return self
+
+    @property
+    def audio_limit_seconds(self) -> float:
+        if self.stt_engine == "babakoto-asr":
+            return min(self.max_audio_seconds, BABAKOTO_ASR_MAX_AUDIO_SECONDS)
+        return self.max_audio_seconds

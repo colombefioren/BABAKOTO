@@ -9,8 +9,13 @@ dependencies = [
   "httpx>=0.27",
 ]
 
+[project.optional-dependencies]
+asr = ["babakoto-stt[sunflower]", "babakoto-training-asr"]
+
 [tool.uv.sources]
 babakoto-agent = { workspace = true }
+babakoto-stt = { workspace = true }
+babakoto-training-asr = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

@@ -49,8 +49,6 @@ class AgentSettings(BaseSettings):
             raise ValueError("SERVICE_TOKEN is required to call the Babakoto speech services")
         if self.stt_provider == "gladia" and not self.gladia_api_key.get_secret_value().strip():
             raise ValueError("STT_PROVIDER=gladia needs GLADIA_API_KEY")
-        if self.stt_provider == "babakoto-asr":
-            raise ValueError("STT_PROVIDER=babakoto-asr is reserved for Milestone 2")
         if self.llm_provider == "openai-compatible" and not (
             self.openai_compatible_base_url and self.llm_model
         ):
