@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isSameOrigin } from '@/lib/guard';
 import { rejectPlaygroundAccess } from '@/lib/playground-auth';
-import { isUuid, putAgent } from './api';
+import { isUuid, putAgent } from '@/lib/agent-configurations';
 
 export async function saveAgent(_previous: string | null, data: FormData): Promise<string | null> {
   const requestHeaders = await headers();

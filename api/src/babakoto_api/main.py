@@ -1,28 +1,38 @@
 """FastAPI application entrypoint."""
 
+import hmac
+from uuid import UUID
+
 import psycopg
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from babakoto_api import __version__
-from babakoto_api.agents import AgentRepository, agent_router
+from babakoto_api.agents import AgentRepository, RuntimeProfile, agent_router
 from babakoto_api.postgres import PostgresAgentRepository
 from babakoto_api.settings import Settings, get_settings
-from babakoto_common.auth import BearerAuthMiddleware
+from babakoto_common.auth import DEFAULT_EXEMPT_PATHS, BearerAuthMiddleware
 from babakoto_common.limits import BodySizeLimitMiddleware
+
+RUNTIME_PROFILE_PATH = "/internal/agent-profile"
 
 
 def create_app(settings: Settings | None = None, store: AgentRepository | None = None) -> FastAPI:
     config = settings if settings is not None else get_settings()
     secret = config.api_secret_key.get_secret_value()
+    runtime_key = config.agent_config_read_token.get_secret_value()
     if store is None and config.database_dsn:
         store = PostgresAgentRepository(config.database_dsn)
 
     app = FastAPI(title="Babakoto API", version=__version__)
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=128 * 1024)
     if secret:
-        app.add_middleware(BearerAuthMiddleware, token=secret)
+        app.add_middleware(
+            BearerAuthMiddleware,
+            token=secret,
+            exempt_paths=DEFAULT_EXEMPT_PATHS | {RUNTIME_PROFILE_PATH},
+        )
 
     def repository() -> AgentRepository:
         if not secret or store is None:
@@ -49,6 +59,24 @@ def create_app(settings: Settings | None = None, store: AgentRepository | None =
     def readyz() -> dict[str, str]:
         repository().ready()
         return {"status": "ready"}
+
+    @app.get(RUNTIME_PROFILE_PATH)
+    def runtime_profile(agent_id: UUID, request: Request) -> RuntimeProfile:
+        if not runtime_key:
+            raise HTTPException(status_code=503, detail="agent runtime access is not configured")
+        authorization = request.headers.get("authorization", "").encode()
+        if not hmac.compare_digest(authorization, f"Bearer {runtime_key}".encode()):
+            raise HTTPException(
+                status_code=401,
+                detail="missing or invalid bearer token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        agent = repository().get(agent_id)
+        if agent is None:
+            raise HTTPException(status_code=404, detail="agent not found")
+        return RuntimeProfile(
+            id=agent.id, system_prompt=agent.system_prompt, first_message=agent.first_message
+        )
 
     app.include_router(agent_router(repository))
     return app

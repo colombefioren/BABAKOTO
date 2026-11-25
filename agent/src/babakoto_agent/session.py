@@ -8,17 +8,19 @@ from babakoto_agent.config import AgentSettings
 from babakoto_agent.providers.llm import build_llm
 from babakoto_agent.providers.stt import build_stt
 from babakoto_agent.providers.tts import BabakotoTts
+from babakoto_agent.runtime_profile import RuntimeProfile
 
 
 class BabakotoAgent(Agent):
     """The voice agent: Malagasy system prompt, then a spoken greeting."""
 
-    def __init__(self, settings: AgentSettings) -> None:
-        super().__init__(instructions=settings.system_prompt)
-        self._first_message = settings.first_message
+    def __init__(self, settings: AgentSettings, profile: RuntimeProfile | None = None) -> None:
+        super().__init__(instructions=profile.system_prompt if profile else settings.system_prompt)
+        self._first_message = profile.first_message if profile else settings.first_message
 
     async def on_enter(self) -> None:
-        await self.session.say(self._first_message)
+        if self._first_message:
+            await self.session.say(self._first_message)
 
 
 def build_session(settings: AgentSettings, vad: VAD | None = None) -> AgentSession[None]:

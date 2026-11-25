@@ -135,3 +135,38 @@ def test_settings_reject_invalid_log_level(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("LOG_LEVEL", "LOUD")
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_runtime_credential_can_read_only_the_selected_profile(
+    repository: MemoryRepository,
+) -> None:
+    provisioned = "fixture-worker-credential"
+    settings = Settings(
+        _env_file=None,
+        api_secret_key=SecretStr(TOKEN),
+        agent_config_read_token=SecretStr(provisioned),
+    )
+    client = TestClient(create_app(settings, repository))
+    assert client.put(f"{PATH}/{FIRST}", headers=AUTH, json=CONFIG).status_code == 200
+    runtime = f"/internal/agent-profile?agent_id={FIRST}"
+    assert client.get(runtime, headers=AUTH).status_code == 401
+    read = {"Authorization": f"Bearer {provisioned}"}
+    assert client.get(runtime, headers=read).json() == {
+        "id": str(FIRST),
+        "system_prompt": CONFIG["system_prompt"],
+        "first_message": CONFIG["first_message"],
+    }
+    assert client.get(f"/internal/agent-profile?agent_id={SECOND}", headers=read).status_code == 404
+    assert client.get(PATH, headers=read).status_code == 401
+    assert client.get(f"{PATH}/{FIRST}", headers=read).status_code == 401
+    assert client.put(f"{PATH}/{FIRST}", headers=read, json=CONFIG).status_code == 401
+    assert client.delete(f"{PATH}/{FIRST}", headers=read).status_code == 401
+
+
+def test_runtime_credential_cannot_reuse_the_operator_key() -> None:
+    with pytest.raises(ValidationError, match="must differ"):
+        Settings(
+            _env_file=None,
+            api_secret_key=SecretStr(TOKEN),
+            agent_config_read_token=SecretStr(TOKEN),
+        )

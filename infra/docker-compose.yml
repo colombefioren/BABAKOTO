@@ -12,6 +12,8 @@ x-agent-env: &agent-env
   LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Run just dev to create a local LiveKit key}
   LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Run just dev to create a local LiveKit secret}
   TTS_SERVICE_URL: http://tts:8002
+  AGENT_CONFIG_API_URL: http://api:8000
+  AGENT_CONFIG_READ_TOKEN: ${AGENT_CONFIG_READ_TOKEN:-}
   SERVICE_TOKEN: ${SERVICE_TOKEN:?Run just dev to create a local service token}
   SERVICE_TIMEOUT_S: ${SERVICE_TIMEOUT_S:-30}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -215,6 +217,7 @@ services:
     environment:
       DATABASE_URL: postgresql://babakoto@agent-db:5432/babakoto
       PGPASSWORD: ${POSTGRES_PASSWORD:-}
+      AGENT_CONFIG_READ_TOKEN: ${AGENT_CONFIG_READ_TOKEN:-}
       API_SECRET_KEY: ${API_SECRET_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     depends_on:

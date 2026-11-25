@@ -36,3 +36,8 @@ and an optional `first_message`. Keep provider credentials in local settings.
 
 `/healthz` reports liveness, and `/readyz` requires configured authentication and
 access to the agent schema. Both probes are unauthenticated for orchestration.
+
+Voice workers use a dedicated `AGENT_CONFIG_READ_TOKEN` for
+`GET /internal/agent-profile?agent_id=<uuid>`. This endpoint returns the ID, prompt
+and greeting for one saved configuration. The worker credential has no administrative
+permissions. `just dev` creates it locally.

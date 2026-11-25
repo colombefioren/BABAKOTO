@@ -76,7 +76,9 @@ export async function getAgent(id: string): Promise<AgentConfiguration | null> {
   if (response.status === 404) return null;
   if (!response.ok) throw new Error('Agent configuration API is unavailable');
   const item: unknown = await response.json();
-  if (!isAgent(item)) throw new Error('Agent configuration API returned an unexpected response');
+  if (!isAgent(item) || item.id.toLowerCase() !== id.toLowerCase()) {
+    throw new Error('Agent configuration API returned an unexpected response');
+  }
   return item;
 }
 

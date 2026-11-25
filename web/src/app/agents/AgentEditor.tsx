@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { saveAgent } from './actions';
-import type { AgentConfiguration } from './api';
+import type { AgentConfiguration } from '@/lib/agent-configurations';
 
 export default function AgentEditor({
   agent,

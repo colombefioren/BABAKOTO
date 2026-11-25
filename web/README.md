@@ -34,4 +34,6 @@ Use the same operator login as the playground. The editor lists, creates and
 updates saved configurations through the private API. If running the web process
 directly, set `API_URL` and `API_SECRET_KEY` in its server environment.
 
-Selecting a saved configuration for a call is pending.
+Choose **Open in playground** on a saved configuration to use its prompt and greeting
+for the next call. Run `just up-dashboard` alongside `just up cpu` or `just up gpu`
+to provide both the configuration API and the voice stack.

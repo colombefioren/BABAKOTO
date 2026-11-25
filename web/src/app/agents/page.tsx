@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { rejectPlaygroundAccess } from '@/lib/playground-auth';
 import AgentEditor from './AgentEditor';
-import { getAgent, isUuid, listAgents, type AgentConfiguration } from './api';
+import { getAgent, isUuid, listAgents, type AgentConfiguration } from '@/lib/agent-configurations';
 import './agents.css';
 
 export const metadata: Metadata = { title: 'Agent configurations · Babakoto' };
@@ -89,6 +89,7 @@ export default async function AgentsPage({
           </aside>
           <section className="agent-panel" aria-labelledby="agent-editor-title">
             <h2 id="agent-editor-title">{data.agent ? 'Edit agent' : 'New agent'}</h2>
+            {data.agent && <Link href={`/?agent=${data.agent.id}`}>Open in playground</Link>}
             <AgentEditor
               key={formAgent.id}
               agent={formAgent}

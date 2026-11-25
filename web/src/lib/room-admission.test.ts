@@ -39,6 +39,15 @@ describe('room admission', () => {
     expect(session.token).toBeTruthy();
   });
 
+  it('stores only the selected configuration ID in room metadata', async () => {
+    const client = directory();
+    const selected = '00000000-0000-0000-0000-000000000001';
+    await new RoomAdmission().admit(client, config, 1, selected);
+    expect(client.createRoom).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: JSON.stringify({ babakoto_agent_id: selected }) }),
+    );
+  });
+
   it('counts existing rooms after the issuer is restarted', async () => {
     const client = directory();
     client.rooms.set('other-room', new Room({ name: 'other-room' }));

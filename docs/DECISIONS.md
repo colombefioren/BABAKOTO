@@ -462,3 +462,16 @@ Format: context, options considered, decision, consequences. Newest last.
 - **Consequences** The dashboard can run without the voice services. The browser
   receives configuration text after authentication and can keep unsaved form edits
   when a write fails.
+
+## ADR-0032: Bind saved configurations to calls by ID
+
+- **Context** The operator needs to try a saved prompt and greeting in the voice
+  playground. LiveKit room metadata is visible to participants.
+- **Decision** Validate the selected UUID before room admission and store only that UUID
+  in room metadata. On caller join, fetch the configuration from the private API with a
+  dedicated read credential. That credential can read one runtime profile by ID and has
+  no administrative permissions. Apply the prompt and greeting at session start.
+- **Consequences** Calls with no saved configuration use the worker's local files.
+  A missing or invalid explicit selection prevents the worker from starting the
+  session. Edits apply when a new session loads the profile. Provider settings and keys
+  stay in the worker environment.

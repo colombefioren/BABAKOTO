@@ -11,7 +11,11 @@ type Status = 'idle' | 'connecting' | 'live' | 'error';
 const seconds = (value: number | null): string =>
   value === null ? 'n/a' : `${value.toFixed(2)} s`;
 
-export default function Playground(): React.JSX.Element {
+export default function Playground({
+  selectedAgent,
+}: {
+  selectedAgent?: { id: string; name: string };
+}): React.JSX.Element {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
@@ -40,7 +44,8 @@ export default function Playground(): React.JSX.Element {
     setLines([]);
     setTurns([]);
     try {
-      const response = await fetch('/api/token', { method: 'POST' });
+      const endpoint = selectedAgent ? `/api/token?agent=${selectedAgent.id}` : '/api/token';
+      const response = await fetch(endpoint, { method: 'POST' });
       const body = (await response.json()) as { token?: string; url?: string; error?: string };
       if (!response.ok || !body.token || !body.url) {
         throw new Error(body.error ?? `Token request failed (${response.status})`);
@@ -80,7 +85,7 @@ export default function Playground(): React.JSX.Element {
       setError(caught instanceof Error ? caught.message : 'Could not start the conversation');
       setStatus('error');
     }
-  }, []);
+  }, [selectedAgent]);
 
   const e2e = turns.map((turn) => turn.e2e);
   const last = turns.at(-1);
@@ -91,6 +96,7 @@ export default function Playground(): React.JSX.Element {
       <header>
         <h1>Babakoto</h1>
         <p className="muted">Talk to a Malagasy voice agent. Captions are always on.</p>
+        {selectedAgent && <p className="muted">Selected agent: {selectedAgent.name}</p>}
         <Link className="configuration-link" href="/agents">
           Agent configurations
         </Link>

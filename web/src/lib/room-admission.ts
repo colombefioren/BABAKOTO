@@ -34,7 +34,12 @@ export function roomService(config: LiveKitConfig): RoomService {
 export class RoomAdmission {
   private busy = false;
 
-  async admit(client: RoomService, config: LiveKitConfig, maximum: number): Promise<Session> {
+  async admit(
+    client: RoomService,
+    config: LiveKitConfig,
+    maximum: number,
+    selectedAgentId?: string,
+  ): Promise<Session> {
     if (this.busy) throw new RoomCapacityError('Room admission is busy. Try again shortly.');
     this.busy = true;
     try {
@@ -48,6 +53,9 @@ export class RoomAdmission {
         emptyTimeout: JOIN_TOKEN_SECONDS,
         departureTimeout: JOIN_TOKEN_SECONDS,
         maxParticipants: 1,
+        ...(selectedAgentId
+          ? { metadata: JSON.stringify({ babakoto_agent_id: selectedAgentId }) }
+          : {}),
       });
       if (room.name !== session.room) throw new Error('LiveKit returned an unexpected room');
       return session;

@@ -27,6 +27,12 @@ class Agent(AgentInput):
     id: UUID
 
 
+class RuntimeProfile(BaseModel):
+    id: UUID
+    system_prompt: str
+    first_message: str
+
+
 class AgentPage(BaseModel):
     items: list[Agent]
     next_after: UUID | None

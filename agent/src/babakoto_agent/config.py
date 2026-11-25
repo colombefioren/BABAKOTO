@@ -36,6 +36,8 @@ class AgentSettings(BaseSettings):
     prompts_dir: Path = DEFAULT_PROMPTS_DIR
     system_prompt_path: str = ""
     first_message_path: str = ""
+    agent_config_api_url: str = ""
+    agent_config_read_token: SecretStr = SecretStr("")
     # Silence after the user stops before the agent answers.
     endpointing_min_delay_s: float = 0.4
     endpointing_max_delay_s: float = 2.0

@@ -22,6 +22,7 @@ def main() -> None:
         ("SERVICE_TOKEN", 32),
         ("WEB_PLAYGROUND_PASSWORD", 32),
         ("API_SECRET_KEY", 32),
+        ("AGENT_CONFIG_READ_TOKEN", 32),
         ("POSTGRES_PASSWORD", 32),
     )
     for name, size in credentials:

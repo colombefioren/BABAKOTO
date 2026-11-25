@@ -24,3 +24,9 @@ uv run python -m babakoto_agent.worker dev
 ```
 
 See [Milestone 1 verification](../docs/PROGRESS.md#milestone-1-talking-mvp) for the status of live calls.
+
+Selected calls load the referenced configuration once when the caller joins. For a
+standalone worker, set `AGENT_CONFIG_API_URL` and `AGENT_CONFIG_READ_TOKEN` locally.
+Compose uses the configuration API on its internal network. A blank saved greeting
+starts a listening session without speech from the agent. If the selected configuration
+cannot be loaded, the worker ends its job.

@@ -2,6 +2,7 @@ import asyncio
 import json
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from livekit.plugins import silero
@@ -9,6 +10,7 @@ from livekit.plugins import silero
 from babakoto_agent import worker
 from babakoto_agent.config import AgentSettings
 from babakoto_agent.latency import TOPIC
+from babakoto_agent.runtime_profile import ProfileUnavailableError
 from babakoto_agent.session import BabakotoAgent, build_session
 
 TOKEN = "t" * 24
@@ -115,7 +117,28 @@ def test_worker_waits_for_the_caller_before_starting_the_session(
     monkeypatch.setattr(worker, "build_session", build)
     monkeypatch.setattr(worker, "_publish_latency", lambda *_: None)
     ctx = SimpleNamespace(
-        proc=SimpleNamespace(userdata={}), room=object(), wait_for_participant=wait
+        proc=SimpleNamespace(userdata={}),
+        room=SimpleNamespace(metadata=""),
+        wait_for_participant=wait,
     )
     asyncio.run(worker.entrypoint(ctx))  # type: ignore[arg-type]
     assert events == ["caller joined", "session built", "session started"]
+
+
+def test_worker_shuts_down_after_an_explicit_profile_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    load_profile = AsyncMock(side_effect=ProfileUnavailableError("Saved profile unavailable"))
+    build_session = Mock()
+    monkeypatch.setattr(worker, "load_runtime_profile", load_profile)
+    monkeypatch.setattr(worker, "build_session", build_session)
+    shutdown = Mock()
+    ctx = SimpleNamespace(
+        room=SimpleNamespace(metadata="saved configuration"),
+        wait_for_participant=AsyncMock(),
+        shutdown=shutdown,
+    )
+    asyncio.run(worker.entrypoint(ctx))  # type: ignore[arg-type]
+    load_profile.assert_awaited_once()
+    shutdown.assert_called_once_with(reason="Saved agent configuration is unavailable")
+    build_session.assert_not_called()

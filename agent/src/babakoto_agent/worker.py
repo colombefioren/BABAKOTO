@@ -11,6 +11,7 @@ from livekit.plugins import silero
 
 from babakoto_agent.config import AgentSettings
 from babakoto_agent.latency import TOPIC, turn_latency
+from babakoto_agent.runtime_profile import ProfileUnavailableError, load_runtime_profile
 from babakoto_agent.session import BabakotoAgent, build_session
 
 log = logging.getLogger("babakoto.agent")
@@ -57,9 +58,15 @@ async def entrypoint(ctx: JobContext) -> None:
     settings = AgentSettings()
     logging.getLogger().setLevel(settings.log_level)
     await ctx.wait_for_participant()
+    try:
+        profile = await load_runtime_profile(ctx.room.metadata, settings)
+    except ProfileUnavailableError as error:
+        log.warning("%s", error)
+        ctx.shutdown(reason="Saved agent configuration is unavailable")
+        return
     session = build_session(settings, vad=ctx.proc.userdata.get("vad"))
     _publish_latency(ctx, session)
-    await session.start(agent=BabakotoAgent(settings), room=ctx.room)
+    await session.start(agent=BabakotoAgent(settings, profile), room=ctx.room)
 
 
 def main() -> None:
