@@ -361,3 +361,19 @@ Format: context, options considered, decision, consequences. Newest last.
   TTS engine also defaults to fake until the operator opts in to non-commercial assets.
   Model caches stay in local Docker volumes. A consented reference clip, when configured,
   is mounted read-only from outside the repo. Set an absolute host path readable by UID 10001.
+
+## ADR-0025: Gladia is an opt-in streaming STT provider
+
+- **Context:** The CPU profile needs an STT service that can transcribe Malagasy without
+  running Sunflower weights. Gladia reports real-time support for Malagasy (`mg`).
+- **Decision:** Select STT through `STT_PROVIDER`. Sunflower stays the default and uses the
+  existing utterance-based HTTP adapter. The CPU profile selects the LiveKit Gladia plugin
+  with `mg` and code switching disabled. The plugin owns WebSocket session handling.
+  Configuration rejects a missing Gladia key and reserves `babakoto-asr` for Milestone 2.
+- **Consequences:** Selecting Gladia and supplying its key sends microphone audio to Gladia.
+  Recording and retention are governed by the provider account. This path is for local tests
+  with consented audio. The local Sunflower path keeps speech recognition inside the stack.
+  The provider selection is tested with fakes. Live service behavior awaits credentials.
+  [LiveKit plugin](https://docs.livekit.io/agents/models/stt/gladia/) ·
+  [Gladia Malagasy support](https://www.gladia.io/product/languages/malagasy) ·
+  [Gladia retention](https://eu1.docs.gladia.io/data/retention/)

@@ -80,6 +80,7 @@ services:
     profiles: [gpu]
     environment:
       <<: *agent-env
+      STT_PROVIDER: sunflower
       STT_SERVICE_URL: http://stt:8001
       TTS_SAMPLE_RATE: ${TTS_SAMPLE_RATE:-24000}
     depends_on:
@@ -88,6 +89,20 @@ services:
       stt:
         condition: service_healthy
       tts:
+        condition: service_healthy
+
+  agent-cpu:
+    <<: *agent
+    profiles: [cpu]
+    environment:
+      <<: *agent-env
+      STT_PROVIDER: gladia
+      GLADIA_API_KEY: ${GLADIA_API_KEY:-}
+      TTS_SAMPLE_RATE: '24000'
+    depends_on:
+      livekit:
+        condition: service_started
+      tts-cpu:
         condition: service_healthy
 
   stt:

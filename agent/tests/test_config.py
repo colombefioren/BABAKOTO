@@ -34,6 +34,18 @@ def test_unknown_provider_is_rejected() -> None:
         make(llm_provider="nope")
 
 
+def test_gladia_requires_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("GLADIA_API_KEY", raising=False)
+    with pytest.raises(ValidationError, match="GLADIA_API_KEY") as error:
+        make(stt_provider="gladia")
+    assert TOKEN not in str(error.value)
+
+
+def test_future_babakoto_asr_is_recognized_as_unavailable() -> None:
+    with pytest.raises(ValidationError, match="reserved for Milestone 2"):
+        make(stt_provider="babakoto-asr")
+
+
 def test_default_prompts_are_loaded_from_the_repo() -> None:
     cfg = make()
     assert cfg.system_prompt.startswith("Ianao dia mpanampy")

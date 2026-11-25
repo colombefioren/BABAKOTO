@@ -533,7 +533,7 @@ version = "0.0.0"
 source = { editable = "agent" }
 dependencies = [
     { name = "httpx" },
-    { name = "livekit-agents", extra = ["anthropic", "google", "openai", "silero"] },
+    { name = "livekit-agents", extra = ["anthropic", "gladia", "google", "openai", "silero"] },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
 ]
@@ -541,7 +541,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
-    { name = "livekit-agents", extras = ["anthropic", "google", "openai", "silero"], specifier = "~=1.8" },
+    { name = "livekit-agents", extras = ["anthropic", "gladia", "google", "openai", "silero"], specifier = "~=1.8" },
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
 ]
@@ -2327,6 +2327,9 @@ codecs = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
+gladia = [
+    { name = "livekit-plugins-gladia" },
+]
 google = [
     { name = "livekit-plugins-google" },
 ]
@@ -2434,6 +2437,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/91/eb/276785576b3138803a84eab2a87164b27be249e890d2a0014d93be893416/livekit_plugins_anthropic-1.8.13.tar.gz", hash = "sha256:f659f87e6dc30d504542332c59345169f1763dbce6f14e868c37bfa75d6d1a1d", size = 9874, upload-time = "2026-11-18T21:38:23.376Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/23/dbfadad7fc82291b2a1932a8140878c72e4f9b1724c247f361784ce7968f/livekit_plugins_anthropic-1.8.13-py3-none-any.whl", hash = "sha256:e9fb3bc8c6fc342bdd0751770d71c574a04b5b615f345b3b26335c7f4863d1a3", size = 11677, upload-time = "2026-11-18T21:38:22.151Z" },
+]
+
+[[package]]
+name = "livekit-plugins-gladia"
+version = "1.8.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "livekit-agents", extra = ["codecs"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f2/95/fd3905dc35e29aa8f83cdeb1a34393469aede9e0949c16e90d31e0c762ef/livekit_plugins_gladia-1.8.13.tar.gz", hash = "sha256:0610a1fbb7dd09792830eaf9a6bc15d8f7452943858ff938447490161bb66b72", size = 14027, upload-time = "2026-11-18T21:39:10.102Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bb/d6/7ecc0928e3a6d040b3968ca01a41408aa4a9184ca929a783efa29ca547d7/livekit_plugins_gladia-1.8.13-py3-none-any.whl", hash = "sha256:ef2bfbbf216e260895777f97ee9c42631572d7c13345451c0e433bf560ef5581", size = 14685, upload-time = "2026-11-18T21:39:08.943Z" },
 ]
 
 [[package]]
