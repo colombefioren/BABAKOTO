@@ -531,3 +531,16 @@ Format: context, options considered, decision, consequences. Newest last.
   notebook workspace's private `.env`, using the same service validation as Compose.
 - **Consequences** The operator checks the signed agreement in private storage.
   Babakoto receives only the assertion. Existing OmniVoice deployments must add it.
+
+## ADR-0038: Prepare private single-speaker data for a grapheme-based voice
+
+- **Context** The local voice needs a consented speaker and commercially suitable
+  recording rights. The first training path needs to work without pretrained weights
+  or an external Malagasy phonemizer.
+- **Decision** Prepare one speaker's consented mono WAV recordings locally. Require a
+  signed agreement file and exact transcripts. Write a private Piper-compatible
+  metadata file, normalized grapheme map and PCM integrity receipt. Use 24 kHz to
+  match the default agent and TTS audio format.
+- **Consequences** The agreement stays outside the corpus. The operator verifies its
+  scope and recording rights. Grapheme quality, dialect and pronunciation remain
+  subject to native listening, and there is no approved voice corpus in the repo.

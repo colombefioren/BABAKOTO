@@ -4,7 +4,10 @@ version = "0.0.0"
 description = "TTS data pipeline and fine-tuning"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-dependencies = []
+dependencies = ["babakoto-malagasy-text", "pydantic>=2.10"]
+
+[tool.uv.sources]
+babakoto-malagasy-text = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

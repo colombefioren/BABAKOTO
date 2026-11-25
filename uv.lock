@@ -677,6 +677,16 @@ provides-extras = ["train"]
 name = "babakoto-training-tts"
 version = "0.0.0"
 source = { editable = "training/tts" }
+dependencies = [
+    { name = "babakoto-malagasy-text" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "babakoto-malagasy-text", editable = "packages/malagasy-text" },
+    { name = "pydantic", specifier = ">=2.10" },
+]
 
 [[package]]
 name = "babakoto-tts"
