@@ -66,8 +66,10 @@ def test_mms_needs_revision() -> None:
 
 
 def test_service_token_is_required_by_default() -> None:
-    with pytest.raises(ValidationError, match="SERVICE_TOKEN"):
-        make(tts_engine="fake", allow_unauthenticated=False)
+    marker = "synthetic-validation-marker"
+    with pytest.raises(ValidationError, match="SERVICE_TOKEN") as error:
+        make(tts_engine="fake", allow_unauthenticated=False, hf_token=marker)
+    assert marker not in str(error.value)
 
 
 def test_short_service_token_is_rejected() -> None:

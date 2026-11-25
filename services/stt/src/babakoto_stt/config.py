@@ -11,7 +11,7 @@ from babakoto_common.auth import MIN_TOKEN_LENGTH
 class SttSettings(BaseSettings):
     """STT configuration read from environment variables."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     # Shared secret for service-to-service calls (Authorization: Bearer <token>). Required unless
     # ALLOW_UNAUTHENTICATED=true, which is for local development only.

@@ -1,4 +1,4 @@
-"""STT provider that calls the Babakoto STT service.
+"""STT provider factory and adapter for the Babakoto STT service.
 
 The service has no streaming recognizer in LiveKit's sense, so this plugin is non-streaming and
 `AgentSession` wraps it with VAD: each utterance is sent to `POST /transcribe` once the user stops.
@@ -11,8 +11,26 @@ from livekit import rtc
 from livekit.agents import APIConnectionError, stt, utils
 from livekit.agents.language import LanguageCode
 from livekit.agents.types import NOT_GIVEN, APIConnectOptions, NotGivenOr
+from livekit.plugins import gladia
+
+from babakoto_agent.config import AgentSettings
 
 LANGUAGE = "mlg"
+
+
+def build_stt(settings: AgentSettings) -> stt.STT[Any]:
+    """Use streaming for Gladia and the local HTTP adapter for Sunflower."""
+    if settings.stt_provider == "gladia":
+        return gladia.STT(
+            api_key=settings.gladia_api_key.get_secret_value().strip(),
+            languages=["mg"],
+            code_switching=False,
+        )
+    return BabakotoStt(
+        base_url=settings.stt_service_url,
+        token=settings.service_token,
+        timeout_s=settings.service_timeout_s,
+    )
 
 
 class BabakotoStt(stt.STT[Any]):

@@ -19,7 +19,8 @@ COPY packages/common/src packages/common/src
 RUN uv sync --frozen --no-dev --package babakoto-stt --extra sunflower --no-editable
 
 FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
-RUN useradd --system --uid 10001 --create-home babakoto
+RUN useradd --system --uid 10001 --create-home babakoto \
+    && install -d -o 10001 -m 0700 /home/babakoto/.cache/huggingface
 COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH" HF_HOME=/home/babakoto/.cache/huggingface
 USER 10001

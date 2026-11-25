@@ -6,7 +6,7 @@ from livekit.plugins import silero
 
 from babakoto_agent.config import AgentSettings
 from babakoto_agent.providers.llm import build_llm
-from babakoto_agent.providers.stt import BabakotoStt
+from babakoto_agent.providers.stt import build_stt
 from babakoto_agent.providers.tts import BabakotoTts
 
 
@@ -29,11 +29,7 @@ def build_session(settings: AgentSettings, vad: VAD | None = None) -> AgentSessi
     """
     return AgentSession(
         vad=vad or silero.VAD.load(min_silence_duration=settings.vad_min_silence_s),
-        stt=BabakotoStt(
-            base_url=settings.stt_service_url,
-            token=settings.service_token,
-            timeout_s=settings.service_timeout_s,
-        ),
+        stt=build_stt(settings),
         llm=build_llm(settings),
         tts=BabakotoTts(
             base_url=settings.tts_service_url,

@@ -28,8 +28,10 @@ def test_revision_accepted() -> None:
 
 
 def test_service_token_is_required_by_default() -> None:
-    with pytest.raises(ValidationError, match="SERVICE_TOKEN"):
-        SttSettings(_env_file=None, stt_engine="fake")
+    marker = "synthetic-validation-marker"
+    with pytest.raises(ValidationError, match="SERVICE_TOKEN") as error:
+        SttSettings(_env_file=None, stt_engine="fake", hf_token=marker)
+    assert marker not in str(error.value)
 
 
 def test_short_service_token_is_rejected() -> None:

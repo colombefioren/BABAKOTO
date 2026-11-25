@@ -1,0 +1,201 @@
+name: babakoto
+
+x-agent: &agent
+  build:
+    context: ..
+    dockerfile: agent/Dockerfile
+  init: true
+  networks: [private, outbound]
+
+x-agent-env: &agent-env
+  LIVEKIT_URL: ws://livekit:7880
+  LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Run just dev to create a local LiveKit key}
+  LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Run just dev to create a local LiveKit secret}
+  TTS_SERVICE_URL: http://tts:8002
+  SERVICE_TOKEN: ${SERVICE_TOKEN:?Run just dev to create a local service token}
+  SERVICE_TIMEOUT_S: ${SERVICE_TIMEOUT_S:-30}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+  LLM_MODEL: ${LLM_MODEL:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_BASE_URL:-}
+  OPENAI_COMPATIBLE_API_KEY: ${OPENAI_COMPATIBLE_API_KEY:-}
+  ENDPOINTING_MIN_DELAY_S: ${ENDPOINTING_MIN_DELAY_S:-0.4}
+  ENDPOINTING_MAX_DELAY_S: ${ENDPOINTING_MAX_DELAY_S:-2.0}
+  INTERRUPTION_MIN_DURATION_S: ${INTERRUPTION_MIN_DURATION_S:-0.2}
+  VAD_MIN_SILENCE_S: ${VAD_MIN_SILENCE_S:-0.3}
+
+x-tts-env: &tts-env
+  SERVICE_TOKEN: ${SERVICE_TOKEN:?Run just dev to create a local service token}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  MAX_TEXT_CHARS: ${MAX_TEXT_CHARS:-2000}
+  MAX_SPOKEN_CHARS: ${MAX_SPOKEN_CHARS:-1500}
+  MAX_CONCURRENT_SYNTHESIS: ${MAX_CONCURRENT_SYNTHESIS:-2}
+
+x-gpu: &gpu
+  resources:
+    reservations:
+      devices:
+        - driver: nvidia
+          count: 1
+          capabilities: [gpu]
+
+x-readiness: &readiness
+  interval: 5s
+  timeout: 3s
+  retries: 12
+  start_period: 10m
+
+services:
+  livekit:
+    image: livekit/livekit-server:v1.13.11@sha256:25cd902de7cacbd5f1f779f6a6ac1eae20ba8f56b0935934ce6b0ab80d1e3d20
+    command: [--config, /etc/livekit.yaml]
+    environment:
+      LIVEKIT_KEYS: '${LIVEKIT_API_KEY:?Run just dev to create a local LiveKit key}: ${LIVEKIT_API_SECRET:?Run just dev to create a local LiveKit secret}'
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - '127.0.0.1:7880:7880'
+      - '127.0.0.1:7881:7881'
+      - '127.0.0.1:7882:7882/udp'
+    networks: [private, edge]
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    environment:
+      LIVEKIT_URL: ${LIVEKIT_URL:-ws://localhost:7880}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Run just dev to create a local LiveKit key}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Run just dev to create a local LiveKit secret}
+      WEB_TRUSTED_PROXY_HOPS: ${WEB_TRUSTED_PROXY_HOPS:-0}
+    ports:
+      - '127.0.0.1:3000:3000'
+    networks: [edge]
+
+  agent:
+    <<: *agent
+    profiles: [gpu]
+    environment:
+      <<: *agent-env
+      STT_PROVIDER: sunflower
+      STT_SERVICE_URL: http://stt:8001
+      TTS_SAMPLE_RATE: ${TTS_SAMPLE_RATE:-24000}
+    depends_on:
+      livekit:
+        condition: service_started
+      stt:
+        condition: service_healthy
+      tts:
+        condition: service_healthy
+
+  agent-cpu:
+    <<: *agent
+    profiles: [cpu]
+    environment:
+      <<: *agent-env
+      STT_PROVIDER: gladia
+      GLADIA_API_KEY: ${GLADIA_API_KEY:-}
+      TTS_SAMPLE_RATE: '24000'
+    depends_on:
+      livekit:
+        condition: service_started
+      tts-cpu:
+        condition: service_healthy
+
+  stt:
+    profiles: [gpu]
+    build:
+      context: ..
+      dockerfile: services/stt/Dockerfile
+    environment:
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Run just dev to create a local service token}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      STT_ENGINE: ${STT_ENGINE:-sunflower}
+      HF_TOKEN: ${HF_TOKEN:-}
+      SUNFLOWER_MODEL_ID: ${SUNFLOWER_MODEL_ID:-Sunbird/SunflowerASR-51-african-languages}
+      SUNFLOWER_MODEL_REVISION: ${SUNFLOWER_MODEL_REVISION:-}
+      SUNFLOWER_LANGUAGE_TOKEN_ID: ${SUNFLOWER_LANGUAGE_TOKEN_ID:-50349}
+      SUNFLOWER_DEVICE: ${SUNFLOWER_DEVICE:-cuda}
+      MAX_AUDIO_SECONDS: ${MAX_AUDIO_SECONDS:-60}
+      VAD_THRESHOLD_DB: ${VAD_THRESHOLD_DB:--40}
+      VAD_SILENCE_MS: ${VAD_SILENCE_MS:-500}
+      VAD_MIN_SPEECH_MS: ${VAD_MIN_SPEECH_MS:-200}
+    healthcheck:
+      <<: *readiness
+      test:
+        [
+          CMD,
+          python,
+          -c,
+          "from urllib.request import urlopen; urlopen('http://127.0.0.1:8001/readyz', timeout=2).close()",
+        ]
+    deploy: *gpu
+    volumes:
+      - stt-model-cache:/home/babakoto/.cache/huggingface
+    networks: [private, outbound]
+
+  tts:
+    profiles: [gpu]
+    build:
+      context: ..
+      dockerfile: services/tts/Dockerfile
+    environment:
+      <<: *tts-env
+      TTS_ENGINE: ${TTS_ENGINE:-fake}
+      ALLOW_NON_COMMERCIAL_ASSETS: ${ALLOW_NON_COMMERCIAL_ASSETS:-false}
+      HF_TOKEN: ${HF_TOKEN:-}
+      TTS_REFERENCE_AUDIO_PATH: /run/reference-voice.wav
+      TTS_REFERENCE_TEXT: ${TTS_REFERENCE_TEXT:-}
+      OMNIVOICE_MODEL_ID: ${OMNIVOICE_MODEL_ID:-k2-fsa/OmniVoice}
+      OMNIVOICE_MODEL_REVISION: ${OMNIVOICE_MODEL_REVISION:-}
+      OMNIVOICE_DEVICE: ${OMNIVOICE_DEVICE:-cuda:0}
+      MMS_MODEL_ID: ${MMS_MODEL_ID:-facebook/mms-tts-mlg}
+      MMS_MODEL_REVISION: ${MMS_MODEL_REVISION:-}
+      MMS_DEVICE: ${MMS_DEVICE:-cuda}
+    healthcheck: &tts-healthcheck
+      <<: *readiness
+      test:
+        [
+          CMD,
+          python,
+          -c,
+          "from urllib.request import urlopen; urlopen('http://127.0.0.1:8002/readyz', timeout=2).close()",
+        ]
+    deploy: *gpu
+    volumes:
+      - tts-model-cache:/home/babakoto/.cache/huggingface
+      - type: bind
+        source: ${TTS_REFERENCE_AUDIO_PATH:-/dev/null}
+        target: /run/reference-voice.wav
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [private, outbound]
+
+  tts-cpu:
+    profiles: [cpu]
+    build:
+      context: ..
+      dockerfile: services/tts/Dockerfile
+      args:
+        TTS_UV_EXTRAS: ''
+    environment:
+      <<: *tts-env
+      TTS_ENGINE: fake
+    healthcheck: *tts-healthcheck
+    networks:
+      private:
+        aliases: [tts]
+
+networks:
+  private:
+    internal: true
+  edge: {}
+  outbound: {}
+
+volumes:
+  stt-model-cache: {}
+  tts-model-cache: {}

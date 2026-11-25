@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
@@ -12,12 +12,12 @@ DEFAULT_PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
 class AgentSettings(BaseSettings):
     """Agent configuration read from environment variables."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
-    # Providers are chosen by config, not code. The STT and TTS engines are selected inside their
-    # services (STT_ENGINE, TTS_ENGINE). A cloud STT provider (Gladia) comes with the CPU profile.
+    stt_provider: Literal["sunflower", "gladia", "babakoto-asr"] = "sunflower"
+    gladia_api_key: SecretStr = SecretStr("")
     llm_provider: Literal["anthropic", "openai", "google", "openai-compatible"] = "anthropic"
     llm_model: str = ""
     openai_compatible_base_url: str = ""
@@ -46,7 +46,11 @@ class AgentSettings(BaseSettings):
     @model_validator(mode="after")
     def _validate(self) -> "AgentSettings":
         if not self.service_token:
-            raise ValueError("SERVICE_TOKEN is required to call the STT and TTS services")
+            raise ValueError("SERVICE_TOKEN is required to call the Babakoto speech services")
+        if self.stt_provider == "gladia" and not self.gladia_api_key.get_secret_value().strip():
+            raise ValueError("STT_PROVIDER=gladia needs GLADIA_API_KEY")
+        if self.stt_provider == "babakoto-asr":
+            raise ValueError("STT_PROVIDER=babakoto-asr is reserved for Milestone 2")
         if self.llm_provider == "openai-compatible" and not (
             self.openai_compatible_base_url and self.llm_model
         ):

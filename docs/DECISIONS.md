@@ -319,8 +319,8 @@ Format: context, options considered, decision, consequences. Newest last.
     the clear error when LiveKit is not configured; a conversation e2e needs the compose stack.
   - CI gets an `e2e` job (build, install Chromium, run Playwright), as ADR-0005 planned.
     `PLAYWRIGHT_CHROME_PATH` lets machines where the bundled browser cannot run use system Chrome.
-- **Consequences:** The `e2e` check should be added to branch protection once it has passed on
-  main. ESLint now includes the React hooks rules.
+- **Consequences:** `Web end-to-end` became a required check after it passed on main. ESLint
+  now includes the React hooks rules.
 
 ## ADR-0023: Token endpoint abuse guards
 
@@ -337,3 +337,45 @@ Format: context, options considered, decision, consequences. Newest last.
   determined attacker. Public deployment
   still needs an edge or WAF limit, authentication and a cap on concurrent rooms; these come
   with the Milestone 3 dashboard and are tracked there.
+
+### ADR-0023 addendum
+
+- With `WEB_TRUSTED_PROXY_HOPS=0`, all visitors share one bucket. The limiter tracks up to
+  10,000 keys and refuses new keys when full. The local playground accepts both limits.
+  Public deployments need an edge or WAF rate limit, authentication and a concurrent-room
+  cap in Milestone 3.
+
+## ADR-0024: Local Compose publishes only loopback ports
+
+- **Context:** The playground needs WebRTC on the host, private speech service endpoints,
+  and outbound connectivity for model downloads and cloud APIs.
+- **Decision:** Publish the web and LiveKit ports on IPv4 loopback. LiveKit advertises
+  the host loopback and its internal ICE candidates so the host browser and the worker
+  can each reach it. The worker uses internal DNS for signaling and speech services.
+  The web and LiveKit have an edge bridge for port publishing. The worker and model
+  services that need remote providers or downloads use a separate outbound bridge.
+  Speech APIs have no host port mappings. Compose passes each service its own settings.
+  Startup validation messages omit raw settings input so configuration errors do not print
+  credentials or reference text.
+- **Consequences:** This setup targets the workstation running Docker. Run one profile
+  at a time. The GPU profile uses Sunflower and reserves an NVIDIA device for each speech
+  service. The CPU TTS image installs no model extras and uses the fake engine. The GPU
+  TTS engine also defaults to fake until the operator opts in to non-commercial assets.
+  Model caches stay in local Docker volumes. A consented reference clip, when configured,
+  is mounted read-only from outside the repo. Set an absolute host path readable by UID 10001.
+
+## ADR-0025: Gladia is an opt-in streaming STT provider
+
+- **Context:** The CPU profile needs an STT service that can transcribe Malagasy without
+  running Sunflower weights. Gladia reports real-time support for Malagasy (`mg`).
+- **Decision:** Select STT through `STT_PROVIDER`. Sunflower stays the default and uses the
+  existing utterance-based HTTP adapter. The CPU profile selects the LiveKit Gladia plugin
+  with `mg` and code switching disabled. The plugin owns WebSocket session handling.
+  Configuration rejects a missing Gladia key and reserves `babakoto-asr` for Milestone 2.
+- **Consequences:** Selecting Gladia and supplying its key sends microphone audio to Gladia.
+  Recording and retention are governed by the provider account. This path is for local tests
+  with consented audio. The local Sunflower path keeps speech recognition inside the stack.
+  The provider selection is tested with fakes. Live service behavior awaits credentials.
+  [LiveKit plugin](https://docs.livekit.io/agents/models/stt/gladia/) ·
+  [Gladia Malagasy support](https://www.gladia.io/product/languages/malagasy) ·
+  [Gladia retention](https://eu1.docs.gladia.io/data/retention/)

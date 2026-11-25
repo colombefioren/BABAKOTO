@@ -6,12 +6,12 @@ Think "ElevenLabs Agents, but for Malagasy, and open source": a user talks (brow
 embedded widget), Babakoto listens (speech-to-text), thinks (LLM with tools and a knowledge
 base) and answers out loud (text-to-speech), with natural turn-taking and interruptions.
 
-> **Status: pre-alpha, Milestone 0 (repo foundations).** Nothing talks yet. No latency or
-> accuracy figures are published until scripts in this repo measure them.
+> **Status: pre-alpha.** The Milestone 1 voice pipeline is implemented. Live-call acceptance
+> and latency measurements are pending. See [project progress](docs/PROGRESS.md).
 
 Babakoto is named after the indri, the lemur of Madagascar known for its song.
 
-## Architecture
+## Architecture and planned integrations
 
 ```
 caller (browser / phone / widget)
@@ -27,8 +27,8 @@ caller (browser / phone / widget)
 
 Providers are chosen by config, not code:
 
-- STT: `sunflower` (self-hosted, default), `gladia` (cloud), `babakoto-asr` (Milestone 2)
-- TTS: `omnivoice` (self-hosted), `mms` (dev-only, non-commercial), `babakoto-tts` (Milestone 3)
+- STT: `sunflower` (self-hosted, default), `gladia` (cloud), `babakoto-asr` (reserved for Milestone 2)
+- TTS: `fake` (test tone), `omnivoice` and `mms` (dev-only, non-commercial), `babakoto-tts` (Milestone 3)
 - LLM: Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint
 
 ## Repository layout
@@ -46,16 +46,30 @@ Providers are chosen by config, not code:
 
 ## Quickstart
 
-Contributor setup (Milestone 0):
+On the machine running Docker, install Docker with Compose, `just`, `uv`, Node.js and `pnpm`.
+The CPU profile uses Gladia and plays a test tone for each reply.
 
 ```sh
 git clone https://github.com/colombefioren/BABAKOTO.git && cd BABAKOTO
-just dev      # installs tooling, prints next steps
-just check    # lint, type-check, tests
+just dev
+just up cpu
 ```
 
-The 3-command `docker compose` quickstart arrives with Milestone 1.
-<!-- demo GIF/video placeholder: add after Milestone 1 -->
+After `just dev`, set `GLADIA_API_KEY` and your LLM provider settings in the local `.env`
+before running `just up cpu`. `just dev` generates the local LiveKit key pair and service token.
+Open the playground at <http://localhost:3000>. In this profile microphone audio goes to Gladia
+and follows the provider account's retention settings. [Gladia retention](https://eu1.docs.gladia.io/data/retention/)
+
+For the GPU profile, install the NVIDIA Container Toolkit and accept the Sunflower model's
+gated terms. Set `HF_TOKEN` and `SUNFLOWER_MODEL_REVISION` in `.env`, then run `just up gpu`.
+The GPU profile also defaults to the test tone. For real speech in local research, choose a
+TTS engine in [.env.example](.env.example) and explicitly set `ALLOW_NON_COMMERCIAL_ASSETS=true`.
+OmniVoice requires a pinned revision and a local reference WAV with its exact transcript and
+the speaker's signed consent. MMS uses `TTS_SAMPLE_RATE=16000` with a pinned MMS revision.
+
+Use `just down` before switching profiles. Use `just check` for local lint, type checks and tests.
+
+<!-- Demo GIF placeholder. Add a consented recording after live acceptance. -->
 
 ## Licensing and data
 

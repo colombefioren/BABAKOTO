@@ -1,15 +1,16 @@
 import asyncio
 import json
+from unittest.mock import Mock, sentinel
 
 import httpx
 import pytest
 from livekit import rtc
 from livekit.agents import APIConnectionError, APIConnectOptions
-from livekit.plugins import anthropic, openai
+from livekit.plugins import anthropic, gladia, openai
 
 from babakoto_agent.config import AgentSettings
 from babakoto_agent.providers.llm import build_llm
-from babakoto_agent.providers.stt import BabakotoStt
+from babakoto_agent.providers.stt import BabakotoStt, build_stt
 from babakoto_agent.providers.tts import BabakotoTts
 
 TOKEN = "t" * 24
@@ -64,6 +65,17 @@ def test_stt_close_closes_the_client() -> None:
     engine = BabakotoStt(base_url="http://stt", token=TOKEN, client=client)
     asyncio.run(engine.aclose())
     assert client.is_closed
+
+
+def test_gladia_factory_requests_malagasy_streaming(monkeypatch: pytest.MonkeyPatch) -> None:
+    key = "test-gladia-key"
+    monkeypatch.setenv("GLADIA_API_KEY", key)
+    factory = Mock(spec=gladia.STT, return_value=sentinel.gladia)
+    monkeypatch.setattr(gladia, "STT", factory)
+    settings = AgentSettings(_env_file=None, service_token=TOKEN, stt_provider="gladia")
+
+    assert build_stt(settings) is sentinel.gladia
+    factory.assert_called_once_with(api_key=key, languages=["mg"], code_switching=False)
 
 
 def tts_client(handler: httpx.MockTransport) -> httpx.AsyncClient:
