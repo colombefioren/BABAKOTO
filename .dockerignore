@@ -8,5 +8,10 @@ node_modules
 **/.env
 **/.env.*
 data
+outputs
+**/checkpoints
+**/recordings
+**/models
+**/*.onnx
 coverage
 **/__pycache__

@@ -18,8 +18,8 @@ COPY services/stt/pyproject.toml services/stt/README.md services/stt/
 COPY training/asr/pyproject.toml training/asr/README.md training/asr/
 COPY training/tts/pyproject.toml training/tts/README.md training/tts/
 COPY eval/pyproject.toml eval/README.md eval/
-# Compose's fake CPU engine needs no model runtime.
-ARG TTS_UV_EXTRAS="--extra omnivoice --extra mms"
+# Choose model runtimes independently of the engine selected at startup.
+ARG TTS_UV_EXTRAS="--extra omnivoice --extra mms --extra local"
 RUN uv sync --frozen --no-dev --package babakoto-tts --no-editable $TTS_UV_EXTRAS
 
 FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b

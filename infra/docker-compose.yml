@@ -35,6 +35,8 @@ x-tts-env: &tts-env
   MAX_TEXT_CHARS: ${MAX_TEXT_CHARS:-2000}
   MAX_SPOKEN_CHARS: ${MAX_SPOKEN_CHARS:-1500}
   MAX_CONCURRENT_SYNTHESIS: ${MAX_CONCURRENT_SYNTHESIS:-2}
+  BABAKOTO_TTS_MODEL_PATH: /run/babakoto-tts
+  BABAKOTO_TTS_CONSENT_CONFIRMED: ${BABAKOTO_TTS_CONSENT_CONFIRMED:-false}
 
 x-gpu: &gpu
   resources:
@@ -183,6 +185,13 @@ services:
     deploy: *gpu
     volumes:
       - tts-model-cache:/home/babakoto/.cache/huggingface
+      - &local-voice
+        type: bind
+        source: ${BABAKOTO_TTS_MODEL_PATH:-/dev/null}
+        target: /run/babakoto-tts
+        read_only: true
+        bind:
+          create_host_path: false
       - type: bind
         source: ${TTS_REFERENCE_AUDIO_PATH:-/dev/null}
         target: /run/reference-voice.wav
@@ -197,10 +206,12 @@ services:
       context: ..
       dockerfile: services/tts/Dockerfile
       args:
-        TTS_UV_EXTRAS: ''
+        TTS_UV_EXTRAS: '--extra local'
     environment:
       <<: *tts-env
-      TTS_ENGINE: fake
+      TTS_ENGINE: ${TTS_CPU_ENGINE:-fake}
+    volumes:
+      - *local-voice
     healthcheck: *tts-healthcheck
     networks:
       private:

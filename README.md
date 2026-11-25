@@ -28,7 +28,7 @@ caller (browser / phone / widget)
 Providers are chosen by config, not code:
 
 - STT: `sunflower` (self-hosted, default), `gladia` (cloud), `babakoto-asr` (local fine-tuned checkpoint)
-- TTS: `fake` (test tone), `omnivoice` and `mms` (dev-only, non-commercial), `babakoto-tts` (Milestone 3)
+- TTS: `fake` (test tone), `omnivoice` and `mms` (dev-only, non-commercial), `babakoto-tts` (local trained voice)
 - LLM: Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint
 
 ## Repository layout
@@ -62,10 +62,14 @@ Open the playground at <http://localhost:3000>. Sign in as `babakoto` with the
 In this profile microphone audio goes to Gladia
 and follows the provider account's retention settings. [Gladia retention](https://eu1.docs.gladia.io/data/retention/)
 
+To serve a locally trained voice, see [voice training](training/tts/README.md).
+In the CPU profile set `TTS_CPU_ENGINE=babakoto-tts` and give the TTS container
+read access to the final voice export. When using the GPU profile set
+`TTS_ENGINE=babakoto-tts` instead. Both profiles default to the test tone.
+
 For the GPU profile, install the NVIDIA Container Toolkit and accept the Sunflower model's
 gated terms. Set `HF_TOKEN` and `SUNFLOWER_MODEL_REVISION` in `.env`, then run `just up gpu`.
-The GPU profile also defaults to the test tone. For real speech in local research, choose a
-TTS engine in [.env.example](.env.example) and explicitly set `ALLOW_NON_COMMERCIAL_ASSETS=true`.
+For experiments with a non-commercial voice, choose an engine in [.env.example](.env.example) and explicitly set `ALLOW_NON_COMMERCIAL_ASSETS=true`.
 OmniVoice requires a pinned revision and a local reference WAV with its exact transcript and
 the speaker's signed consent. Set `TTS_REFERENCE_CONSENT_CONFIRMED=true` after verifying it. MMS uses `TTS_SAMPLE_RATE=16000` with a pinned MMS revision.
 

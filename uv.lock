@@ -704,6 +704,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+local = [
+    { name = "onnxruntime" },
+]
 mms = [
     { name = "torch" },
     { name = "transformers" },
@@ -722,6 +725,7 @@ requires-dist = [
     { name = "huggingface-hub", marker = "extra == 'omnivoice'", specifier = ">=0.26" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "omnivoice", marker = "extra == 'omnivoice'" },
+    { name = "onnxruntime", marker = "extra == 'local'", specifier = ">=1.18" },
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "torch", marker = "extra == 'mms'", specifier = ">=2.5" },
     { name = "torch", marker = "extra == 'omnivoice'", specifier = ">=2.5" },
@@ -729,7 +733,7 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.32" },
     { name = "websockets", specifier = ">=13.0" },
 ]
-provides-extras = ["omnivoice", "mms"]
+provides-extras = ["omnivoice", "mms", "local"]
 
 [[package]]
 name = "braceexpand"

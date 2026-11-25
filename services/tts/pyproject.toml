@@ -18,6 +18,7 @@ dependencies = [
 # Heavy model runtimes, installed only in GPU images and notebooks.
 omnivoice = ["huggingface-hub>=0.26", "omnivoice", "torch>=2.5"]
 mms = ["torch>=2.5", "transformers>=4.46"]
+local = ["onnxruntime>=1.18"]
 
 [tool.uv.sources]
 babakoto-common = { workspace = true }

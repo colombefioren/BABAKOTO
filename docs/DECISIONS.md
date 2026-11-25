@@ -557,3 +557,15 @@ Format: context, options considered, decision, consequences. Newest last.
   Piper's GPL tool remains separate, and the speaker agreement determines permissible
   use. The trainer needs its compiled alignment extension and a compatible GPU
   environment. The resulting voice still requires native listening review.
+
+## ADR-0040: Serve the local voice on the CPU with ONNX Runtime
+
+- **Context** Consented voice training produces a local, single-speaker ONNX export.
+  It should work in the private stack without downloading weights at startup.
+- **Decision** Add the opt-in `babakoto-tts` engine. Read and verify the operator's
+  graph, config and training provenance as one export. Use the shared grapheme
+  mapping, the CPU execution provider and the existing streaming interface.
+  Mount only the final voice directory read-only in Compose.
+- **Consequences** CPU and GPU profiles can both serve the local voice. The fake
+  engine remains their default. The operator confirms voice permissions and keeps
+  all training artifacts private. Playback quality and speed need real evaluation.

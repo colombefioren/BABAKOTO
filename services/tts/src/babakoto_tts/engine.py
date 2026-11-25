@@ -1,12 +1,14 @@
 """TTS engines behind one interface. Providers are chosen by config, not code."""
 
 import logging
+from pathlib import Path
 from typing import Any, Protocol
 
 import numpy as np
 import numpy.typing as npt
 
 from babakoto_tts.config import NON_COMMERCIAL_ENGINES, TtsSettings
+from babakoto_tts.local_voice import LocalVoiceEngine
 
 log = logging.getLogger(__name__)
 
@@ -138,6 +140,8 @@ def build_engine(settings: TtsSettings) -> TtsEngine:
         )
     if settings.tts_engine == "fake":
         return FakeEngine()
+    if settings.tts_engine == "babakoto-tts":
+        return LocalVoiceEngine(Path(settings.babakoto_tts_model_path))
     if settings.tts_engine == "mms":
         return MmsEngine(settings)
     return OmniVoiceEngine(settings)

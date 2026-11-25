@@ -22,7 +22,7 @@ class TtsSettings(BaseSettings):
     service_token: str = ""
     allow_unauthenticated: bool = False
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
-    tts_engine: Literal["omnivoice", "mms", "fake"] = "omnivoice"
+    tts_engine: Literal["omnivoice", "mms", "fake", "babakoto-tts"] = "omnivoice"
     # Off by default. Required for every engine whose weights are non-commercial.
     allow_non_commercial_assets: bool = False
     hf_token: str = ""
@@ -39,6 +39,9 @@ class TtsSettings(BaseSettings):
     mms_model_id: str = "facebook/mms-tts-mlg"
     mms_model_revision: str = ""
     mms_device: str = "cuda"
+
+    babakoto_tts_model_path: str = ""
+    babakoto_tts_consent_confirmed: bool = False
 
     max_text_chars: int = 2000
     # Longest sentence after normalization (digits expand into many words).
@@ -90,4 +93,9 @@ class TtsSettings(BaseSettings):
                 )
         if engine == "mms" and not self.mms_model_revision:
             raise ValueError("TTS_ENGINE=mms needs MMS_MODEL_REVISION")
+        if engine == "babakoto-tts":
+            if not self.babakoto_tts_consent_confirmed:
+                raise ValueError("TTS_ENGINE=babakoto-tts needs BABAKOTO_TTS_CONSENT_CONFIRMED")
+            if not self.babakoto_tts_model_path or not Path(self.babakoto_tts_model_path).is_dir():
+                raise ValueError("BABAKOTO_TTS_MODEL_PATH must point to a local voice export")
         return self
