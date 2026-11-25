@@ -20,6 +20,18 @@ MIGRATIONS = (
         )
         """,
     ),
+    (
+        2,
+        """
+        CREATE TABLE babakoto_documents (
+            agent_id uuid NOT NULL REFERENCES babakoto_agents(id) ON DELETE CASCADE,
+            id uuid NOT NULL,
+            title text NOT NULL CHECK (char_length(title) BETWEEN 1 AND 160),
+            text text NOT NULL CHECK (char_length(text) BETWEEN 1 AND 10000),
+            PRIMARY KEY (agent_id, id)
+        )
+        """,
+    ),
 )
 
 

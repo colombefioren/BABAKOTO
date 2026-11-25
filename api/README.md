@@ -41,3 +41,21 @@ Voice workers use a dedicated `AGENT_CONFIG_READ_TOKEN` for
 `GET /internal/agent-profile?agent_id=<uuid>`. This endpoint returns the ID, prompt
 and greeting for one saved configuration. The worker credential has no administrative
 permissions. `just dev` creates it locally.
+
+## Knowledge documents
+
+Attach operator-provided text to a saved agent under `/v1/agents/{id}/documents`.
+Use the same administrative bearer credential as the configuration endpoints.
+Each agent owns a separate document namespace. The suffixes below are relative to
+`/v1/agents/{id}`.
+
+| Method and path suffix            | Behavior                                                 |
+| --------------------------------- | -------------------------------------------------------- |
+| `GET /documents`                  | List document IDs and titles using `limit` and `after`.  |
+| `GET /documents/{document_id}`    | Read a document's title and text.                        |
+| `PUT /documents/{document_id}`    | Create or replace plain text under a caller-chosen UUID. |
+| `DELETE /documents/{document_id}` | Remove the document. Repeated deletes return `204`.      |
+
+PUT requires `title` and `text`. Titles allow 160 characters and text allows
+10,000 characters. Delete an agent to also remove its attached documents. Keep approved
+source records privately and supply text directly.

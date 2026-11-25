@@ -475,3 +475,15 @@ Format: context, options considered, decision, consequences. Newest last.
   A missing or invalid explicit selection prevents the worker from starting the
   session. Edits apply when a new session loads the profile. Provider settings and keys
   stay in the worker environment.
+
+## ADR-0033: Store plain-text knowledge documents per agent
+
+- **Context** Retrieval needs a private collection of operator-provided source text.
+- **Decision** Add an administrative text-document API under each saved agent. Use a composite
+  key of agent UUID and document UUID, with an additive PostgreSQL migration and a foreign
+  key that deletes documents with their owning agent. Lists use the UUID cursor and omit
+  document text. Text is bounded and supplied by the operator.
+- **Consequences** Upserts are atomic and can be retried with the same document UUID. The text
+  stays in PostgreSQL. Validation responses contain field errors only.
+  Retrieval and its index can evolve independently of document storage. Rolling back the
+  application can leave the additive table in place.

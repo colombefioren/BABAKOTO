@@ -10,6 +10,8 @@ from fastapi.responses import JSONResponse
 
 from babakoto_api import __version__
 from babakoto_api.agents import AgentRepository, RuntimeProfile, agent_router
+from babakoto_api.knowledge import KnowledgeRepository, knowledge_router
+from babakoto_api.knowledge_store import PostgresKnowledgeRepository
 from babakoto_api.postgres import PostgresAgentRepository
 from babakoto_api.settings import Settings, get_settings
 from babakoto_common.auth import DEFAULT_EXEMPT_PATHS, BearerAuthMiddleware
@@ -18,12 +20,19 @@ from babakoto_common.limits import BodySizeLimitMiddleware
 RUNTIME_PROFILE_PATH = "/internal/agent-profile"
 
 
-def create_app(settings: Settings | None = None, store: AgentRepository | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    store: AgentRepository | None = None,
+    documents: KnowledgeRepository | None = None,
+) -> FastAPI:
     config = settings if settings is not None else get_settings()
     secret = config.api_secret_key.get_secret_value()
     runtime_key = config.agent_config_read_token.get_secret_value()
-    if store is None and config.database_dsn:
-        store = PostgresAgentRepository(config.database_dsn)
+    if config.database_dsn:
+        if store is None:
+            store = PostgresAgentRepository(config.database_dsn)
+        if documents is None:
+            documents = PostgresKnowledgeRepository(config.database_dsn)
 
     app = FastAPI(title="Babakoto API", version=__version__)
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=128 * 1024)
@@ -38,6 +47,11 @@ def create_app(settings: Settings | None = None, store: AgentRepository | None =
         if not secret or store is None:
             raise HTTPException(status_code=503, detail="agent storage is not configured")
         return store
+
+    def knowledge_repository() -> KnowledgeRepository:
+        if not secret or documents is None:
+            raise HTTPException(status_code=503, detail="knowledge storage is not configured")
+        return documents
 
     @app.exception_handler(psycopg.Error)
     async def database_error(_: Request, _error: Exception) -> JSONResponse:
@@ -58,6 +72,8 @@ def create_app(settings: Settings | None = None, store: AgentRepository | None =
     @app.get("/readyz")
     def readyz() -> dict[str, str]:
         repository().ready()
+        if documents is not None:
+            documents.ready()
         return {"status": "ready"}
 
     @app.get(RUNTIME_PROFILE_PATH)
@@ -79,6 +95,7 @@ def create_app(settings: Settings | None = None, store: AgentRepository | None =
         )
 
     app.include_router(agent_router(repository))
+    app.include_router(knowledge_router(knowledge_repository))
     return app
 
 

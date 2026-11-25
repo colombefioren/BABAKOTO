@@ -1,11 +1,20 @@
 """PostgreSQL repository for saved agent configuration."""
 
+from typing import TypeVar
 from uuid import UUID
 
 import psycopg
-from psycopg.rows import class_row
+from psycopg.rows import RowFactory, class_row
 
 from babakoto_api.agents import Agent, AgentInput
+
+Row = TypeVar("Row")
+
+
+def connect(dsn: str, row_factory: RowFactory[Row]) -> psycopg.Connection[Row]:
+    return psycopg.connect(
+        dsn, row_factory=row_factory, connect_timeout=3, options="-c statement_timeout=3000"
+    )
 
 
 class PostgresAgentRepository:
@@ -13,12 +22,7 @@ class PostgresAgentRepository:
         self._dsn = dsn
 
     def _connect(self) -> psycopg.Connection[Agent]:
-        return psycopg.connect(
-            self._dsn,
-            row_factory=class_row(Agent),
-            connect_timeout=3,
-            options="-c statement_timeout=3000",
-        )
+        return connect(self._dsn, class_row(Agent))
 
     def ready(self) -> None:
         with self._connect() as conn:
