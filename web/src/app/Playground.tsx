@@ -53,16 +53,21 @@ export default function Playground({
       const room = new Room();
       roomRef.current = room;
 
-      room.registerTextStreamHandler(TRANSCRIPTION_TOPIC, async (reader) => {
+      room.registerTextStreamHandler(TRANSCRIPTION_TOPIC, async (reader, participant) => {
         let text = '';
         for await (const chunk of reader) {
           text += chunk;
           setLines((current) =>
-            applySegment(current, {
-              streamId: reader.info.id,
-              attributes: reader.info.attributes ?? {},
-              text,
-            }),
+            applySegment(
+              current,
+              {
+                streamId: reader.info.id,
+                senderIdentity: participant.identity,
+                attributes: reader.info.attributes ?? {},
+                text,
+              },
+              room.localParticipant.identity,
+            ),
           );
         }
       });

@@ -628,3 +628,14 @@ Format: context, options considered, decision, consequences. Newest last.
   The endpoint reports ready after the worker registers with LiveKit.
 - **Consequences** The quickstart waits for registration before returning.
   Setup errors can surface during startup. The health port stays internal.
+
+## ADR-0046: Attribute captions to the transcribed participant
+
+- **Context** LiveKit attaches a transcribed audio track ID to both agent and
+  microphone captions. Testing a live call exposed an incorrect speaker label
+  when the playground treated the presence of a track ID as evidence of user speech.
+- **Decision** Compare the transcription stream's sender identity with the
+  browser's local participant identity. Continue using the segment ID for text updates.
+- **Consequences** The operator can distinguish the microphone transcript from the
+  agent's response when checking recognition quality.
+  [LiveKit text streams](https://docs.livekit.io/agents/multimodality/text/)
